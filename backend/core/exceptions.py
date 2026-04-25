@@ -14,3 +14,8 @@ class ValidationError(AppError):
     service/domain layer, not the HTTP layer.
     """
     pass
+
+
+class NotFoundError(AppError):
+    """Raised when a requested resource does not exist."""
+    pass
