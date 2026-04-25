@@ -16,8 +16,8 @@ def sanitize_comment_text(text: str) -> str:
     """Strip disallowed HTML tags and validate XHTML tag closure.
     
     Pipeline:
-        1. bleach strips everything outside ALLOWED_TAGS
-        2. validate_xhtml_closure checks all remaining tags are closed
+        1. bleach strips everything outside `ALLOWED_TAGS`
+        2. `validate_xhtml_closure` checks all remaining tags are closed
     
     :param text: Raw user input.
     :returns: Sanitized, XHTML-valid string safe for storage and display.

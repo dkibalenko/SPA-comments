@@ -28,6 +28,7 @@ THIRD_PARTY_APPS = [
     "django_filters",
     "channels",
     "debug_toolbar",
+    "django_extensions",
 ]
 
 LOCAL_APPS = [
