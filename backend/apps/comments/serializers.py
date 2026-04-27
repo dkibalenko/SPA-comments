@@ -52,7 +52,7 @@ class CommentCreateSerializer(serializers.Serializer):
 
     Combines user identity fields + comment fields in one payload
     because the frontend submits everything together.
-    parent_id is optional — None means top-level comment.
+    `parent_id` is optional — `None` means top-level comment.
     """
     # User identity fields
     username = serializers.CharField(max_length=50)
@@ -62,6 +62,10 @@ class CommentCreateSerializer(serializers.Serializer):
     # Comment fields
     text = serializers.CharField()
     parent_id = serializers.UUIDField(required=False, allow_null=True)
+
+    # Captcha - required on every submission
+    captcha_token = serializers.CharField()
+    captcha_answer = serializers.CharField()
 
     def validate_username(self, value: str) -> str:
         if not re.match(r"^[a-zA-Z0-9]+$", value):

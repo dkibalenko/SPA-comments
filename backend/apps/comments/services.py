@@ -1,3 +1,4 @@
+from apps.captcha_app.services import CaptchaService
 from apps.comments.models import Comment
 from apps.comments.repository import CommentRepository
 from apps.users.repository import UserRepository
@@ -16,9 +17,11 @@ class CommentService:
         self,
         comment_repo: CommentRepository | None = None,
         user_repo: UserRepository | None = None,
+        captcha_service: CaptchaService | None = None
     ) -> None:
         self.comment_repo = comment_repo or CommentRepository()
         self.user_repo = user_repo or UserRepository()
+        self.captcha_service = captcha_service or CaptchaService()
 
     def create_comment(
         self,
@@ -27,27 +30,33 @@ class CommentService:
         text: str,
         ip_address: str,
         user_agent: str,
+        captcha_token: str,
+        captcha_answer: str,
         home_page: str | None = None,
         parent_id: str | None = None,
     ) -> Comment:
         """Create a comment, resolving user identity first.
 
         Steps:
-            1. Sanitize and validate comment text (XSS protection)
-            2. Validate parent exists if `parent_id` provided
-            3. Resolve user identity (get or create)
-            4. Persist the comment
+            1. Validate CAPTCHA response
+            2. Sanitize and validate comment text (XSS protection)
+            3. Validate parent exists if `parent_id` provided
+            4. Resolve user identity (get or create)
+            5. Persist the comment
 
         :raises ValidationError: If `text` is empty after sanitization,
                                  or `parent_id` doesn't exist.
         :returns: Saved `Comment` instance.
         """
-        # 1. sanitize before anything touches the DB
+        # 1. CAPTCHA first
+        self.captcha_service.validate(captcha_token, captcha_answer)
+
+        # 2. sanitize text
         clean_text = sanitize_comment_text(text)
         if not clean_text.strip():
             raise ValidationError("Comment text cannot be empty.")
 
-        # 2. validate parent exists
+        # 3. validate parent
         if parent_id:
             parent = self.comment_repo.get_by_id(parent_id)
             if not parent:
@@ -55,7 +64,7 @@ class CommentService:
                     f"Parent comment {parent_id} does not exist."
                 )
 
-        # 3. resolve user identity
+        # 4. resolve user identity
         user, _ = self.user_repo.get_or_create_by_identity(
             username=username,
             email=email,
@@ -64,7 +73,7 @@ class CommentService:
             home_page=home_page,
         )
 
-        # 4. persist
+        # 5. persist
         comment = self.comment_repo.create(
             user_id=user.id,
             text=clean_text,

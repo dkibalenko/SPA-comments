@@ -90,7 +90,7 @@ DATABASES = {
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": config("REDIS_URL", default="redis://localhost:6379/1"),
+        "LOCATION": config("REDIS_CACHE_URL", default="redis://localhost:6379/1"),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
@@ -100,16 +100,16 @@ CACHES = {
 # ── Channels (WebSocket) ──────────────────────────────────
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "BACKEND": "channels_redis.core.RedisChanne lLayer",
         "CONFIG": {
-            "hosts": [config("REDIS_URL", default="redis://localhost:6379/0")],
+            "hosts": [config("REDIS_CHANNELS_URL", default="redis://localhost:6379/2")],
         },
     },
 }
 
 # ── Celery ────────────────────────────────────────────────
-CELERY_BROKER_URL = config("REDIS_URL", default="redis://localhost:6379/2")
-CELERY_RESULT_BACKEND = config("REDIS_URL", default="redis://localhost:6379/2")
+CELERY_BROKER_URL = config("REDIS_CELERY_URL", default="redis://localhost:6379/3")
+CELERY_RESULT_BACKEND = config("REDIS_CELERY_URL", default="redis://localhost:6379/3")
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 
