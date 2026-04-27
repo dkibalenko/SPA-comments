@@ -53,6 +53,8 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
                 text=data["text"],
                 ip_address=request.META.get("REMOTE_ADDR", ""),
                 user_agent=request.META.get("HTTP_USER_AGENT", ""),
+                captcha_token=data["captcha_token"],
+                captcha_answer=data["captcha_answer"],
                 home_page=data.get("home_page"),
                 parent_id=str(data["parent_id"]) if data.get(
                     "parent_id"
