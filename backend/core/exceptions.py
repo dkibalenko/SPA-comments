@@ -19,3 +19,8 @@ class ValidationError(AppError):
 class NotFoundError(AppError):
     """Raised when a requested resource does not exist."""
     pass
+
+
+class CaptchaError(AppError):
+    """Raised when CAPTCHA token is invalid, expired, or answer is wrong."""
+    pass
