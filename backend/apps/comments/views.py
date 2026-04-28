@@ -5,6 +5,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
+from apps.attachments.services import AttachmentService
 from apps.comments.filters import CommentFilter
 from apps.comments.serializers import (
     CommentCreateSerializer,
@@ -12,7 +13,13 @@ from apps.comments.serializers import (
     CommentTreeSerializer,
 )
 from apps.comments.services import CommentService
-from core.exceptions import NotFoundError, ValidationError
+from core.exceptions import (
+    NotFoundError,
+    ValidationError,
+    CaptchaError,
+    FileTooLargeError,
+    UnsupportedFileTypeError
+)
 from core.pagination import CommentPagination
 
 
@@ -29,6 +36,7 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.service = CommentService()
+        self.attachment_service = AttachmentService()
 
     def get_queryset(self):
         """Return top-level queryset for list + filter + paginate flow."""
@@ -41,7 +49,10 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
         return CommentListSerializer
 
     def create(self, request: Request, *args, **kwargs) -> Response:
-        """Create a new comment or reply."""
+        """Create a new comment or reply with optional file attachment.
+
+        Accepts multipart/form-data so file + fields arrive together.
+        """
         serializer = CommentCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
@@ -60,11 +71,27 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
                     "parent_id"
                 ) else None
             )
-        except ValidationError as exc:
+        except (ValidationError, CaptchaError) as exc:
             return Response(
                 {"detail": str(exc)},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        # optional file attachment
+        uploaded_file = request.FILES.get("file")
+        if uploaded_file:
+            try:
+                self.attachment_service.handle_upload(
+                    comment_id=str(comment.id),
+                    file=uploaded_file,
+                )
+            except (UnsupportedFileTypeError, FileTooLargeError) as exc:
+                # rollback to keep atomicity
+                comment.delete()
+                return Response(
+                    {"detail": str(exc)},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         return Response(
             {"id": str(comment.id), "created_at": comment.created_at},
