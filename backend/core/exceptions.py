@@ -24,3 +24,13 @@ class NotFoundError(AppError):
 class CaptchaError(AppError):
     """Raised when CAPTCHA token is invalid, expired, or answer is wrong."""
     pass
+
+
+class UnsupportedFileTypeError(AppError):
+    """Raised by AttachmentFactory when the uploaded file type is not allowed."""
+    pass
+
+
+class FileTooLargeError(AppError):
+    """Raised when an uploaded file exceeds the allowed size limit."""
+    pass
