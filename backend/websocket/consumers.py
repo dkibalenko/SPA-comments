@@ -1,0 +1,63 @@
+import json
+import logging
+
+from channels.generic.websocket import AsyncWebsocketConsumer
+
+from apps.comments.handlers import COMMENTS_GROUP
+
+log = logging.getLogger(__name__)
+
+
+class CommentConsumer(AsyncWebsocketConsumer):
+    """WebSocket consumer for real-time comment updates.
+
+    Connection lifecycle:
+        connect()    → join the comments group
+        disconnect() → leave the group
+        receive()    → not used (read-only push from server)
+        comment.broadcast → called by channel layer when group_send fires
+
+    All connected clients receive every new comment instantly.
+    """
+
+    async def connect(self) -> None:
+        """Accept connection and join the shared comments group."""
+        await self.channel_layer.group_add(
+            COMMENTS_GROUP,
+            self.channel_name,
+        )
+        # accept the connection call
+        await self.accept()
+        log.debug(f"WS connected: channel={self.channel_name}")
+
+    async def disconnect(self, close_code: int) -> None:
+        """Leave the group on disconnect - no cleanup needed."""
+        await self.channel_layer.group_discard(
+            COMMENTS_GROUP,
+            self.channel_name,
+        )
+        log.debug(
+            f"WS disconnected: channel={self.channel_name} code={close_code}"
+        )
+
+    async def receive(self, text_data: str = None, bytes_data=None) -> None:
+        """Client → server messages are ignored.
+
+        This is a server-push only channel.
+        Clients connect to listen, not to send.
+        """
+        pass
+
+    async def comment_broadcast(self, event: dict) -> None:
+        """Receive a message from the channel layer group & forward to client.
+
+        This method name maps to the `type` field in `group_send` payload.
+
+        :param event: The payload dict sent by `on_comment_created` handler.
+        """
+        # remove the type key - client doesn't need Channels internals
+        payload = {k: v for k, v in event.items() if k != "type"}
+
+        # send JSON to the client. every connected client receives new comment
+        await self.send(text_data=json.dumps(payload))
+        log.debug(f"Pushed comment {payload.get('id')} to {self.channel_name}")
