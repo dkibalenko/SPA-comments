@@ -1,6 +1,7 @@
 from apps.captcha_app.services import CaptchaService
 from apps.comments.models import Comment
 from apps.comments.repository import CommentRepository
+from apps.comments.signals import comment_created
 from apps.users.repository import UserRepository
 from core.exceptions import NotFoundError, ValidationError
 from core.validators import sanitize_comment_text
@@ -79,6 +80,16 @@ class CommentService:
             text=clean_text,
             parent_id=parent_id,
         )
+
+        # 6. reload with user relation for the signal payload
+        comment = (
+            Comment.objects
+            .select_related("user")
+            .get(id=comment.id)
+        )
+
+        # 7. fire signal
+        comment_created.send(sender=self.__class__, comment=comment)
 
         return comment
 

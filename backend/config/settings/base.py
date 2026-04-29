@@ -100,7 +100,7 @@ CACHES = {
 # ── Channels (WebSocket) ──────────────────────────────────
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels_redis.core.RedisChanne lLayer",
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
             "hosts": [config("REDIS_CHANNELS_URL", default="redis://localhost:6379/2")],
         },
