@@ -1,0 +1,14 @@
+.venv
+.vscode/
+__pycache__
+*.pyc
+*.pyo
+.pytest_cache
+.coverage
+htmlcov
+*.egg-info
+.git
+.gitignore
+README.md
+media/
+staticfiles/
