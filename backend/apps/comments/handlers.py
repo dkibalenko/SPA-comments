@@ -4,6 +4,7 @@ from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
 from apps.comments.models import Comment
+from apps.notifications.tasks import notify_reply_author
 
 log = logging.getLogger(__name__)
 
@@ -23,6 +24,7 @@ def on_comment_created(sender, comment: Comment, **kwargs) -> None:
     :param sender: The class that fired the signal (CommentService).
     :param comment: The freshly persisted Comment instance.
     """
+    # ---WS broadcast-----
     # should send high-level events over the channel layer
     channel_layer = get_channel_layer()
 
@@ -54,3 +56,15 @@ def on_comment_created(sender, comment: Comment, **kwargs) -> None:
     except Exception as exc:
         # Never let WS broadcast failure break the HTTP response
         log.error(f"WebSocket broadcast failed: {exc}", exc_info=True)
+
+    # ----Celery notification task-----
+    # Only fire for replies - top-level comments have no parent to notify
+    if comment.parent_id:
+        try:
+            notify_reply_author.delay(str(comment.id))
+            log.debug(f"Queued reply notification for comment {comment.id}")
+        except Exception as exc:
+            log.error(
+                f"Failed to queue notifcation for comment {comment.id}: {exc}",
+                exc_info=True,
+            )

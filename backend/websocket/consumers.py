@@ -23,8 +23,8 @@ class CommentConsumer(AsyncWebsocketConsumer):
     async def connect(self) -> None:
         """Accept connection and join the shared comments group."""
         await self.channel_layer.group_add(
-            COMMENTS_GROUP,
-            self.channel_name,
+            COMMENTS_GROUP,     # "comments" maps to a list of channel names
+            self.channel_name,  # unique ID for this WebSocket connection
         )
         # accept the connection call
         await self.accept()
