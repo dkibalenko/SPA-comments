@@ -48,4 +48,4 @@ def send_reply_notification(data: ReplyNotificationData) -> None:
             f"Failed to send reply message to {data.recipient_email}: {exc}",
             exc_info=True,
         )
-        raise   # Celery can retry
+        raise   # propagates back to the Celery task - Celery can retry
