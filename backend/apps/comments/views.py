@@ -1,9 +1,12 @@
+import logging
+
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.mixins import CreateModelMixin, ListModelMixin
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
+from django.core.cache import cache
 
 from apps.attachments.services import AttachmentService
 from apps.comments.filters import CommentFilter
@@ -21,6 +24,10 @@ from core.exceptions import (
     UnsupportedFileTypeError
 )
 from core.pagination import CommentPagination
+from core.cache import COMMENT_LIST_TTL, make_list_cache_key
+
+
+log = logging.getLogger(__name__)
 
 
 class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
@@ -54,11 +61,11 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
         Accepts multipart/form-data so file + fields arrive together.
         """
         serializer = CommentCreateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        serializer.is_valid(raise_exception=True)  # return HTTP 400 by default
         data = serializer.validated_data
 
         try:
-            comment = self.service.create_comment(
+            result = self.service.create_comment(
                 username=data["username"],
                 email=data["email"],
                 text=data["text"],
@@ -76,6 +83,9 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
                 {"detail": str(exc)},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        
+        comment = result["comment"]
+        token = result["token"]
 
         # optional file attachment
         uploaded_file = request.FILES.get("file")
@@ -94,21 +104,48 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
                 )
 
         return Response(
-            {"id": str(comment.id), "created_at": comment.created_at},
+            {
+                "id": str(comment.id),
+                "created_at": comment.created_at,
+                "token": token  # frontend stores token for next submission
+            },
             status=status.HTTP_201_CREATED,
         )
 
     def list(self, request: Request, *args, **kwargs) -> Response:
-        """Paginated, sortable list of top-level comments."""
+        """Paginated sortable list — served from cache when available.
+
+        Cache key encodes ordering + page, so each unique combination 
+        gets its own cache entry.
+        """
+        # build cache key from the actual request params
+        ordering = request.query_params.get("ordering", "-created_at")
+        page = request.query_params.get("page", "1")
+        cache_key = make_list_cache_key(ordering=ordering, page=page)
+
+        # try cache first
+        cached_response = cache.get(cache_key)
+        if cached_response is not None:
+            log.debug(f"Cache HIT: list ordering={ordering} page={page}")
+            return Response(cached_response)
+
+        log.debug(f"Cache MISS: list ordering={ordering} page={page}")
+
+        # cache miss - build response normally
         queryset = self.filter_queryset(self.get_queryset())
-        page = self.paginate_queryset(queryset)
+        page_obj = self.paginate_queryset(queryset)
 
-        if page is not None:
-            serializer = CommentListSerializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+        if page_obj is not None:
+            serializer = CommentListSerializer(page_obj, many=True)
+            response_data = self.get_paginated_response(serializer.data).data
+        else:
+            serializer = CommentListSerializer(queryset, many=True)
+            response_data = serializer.data
 
-        serializer = CommentListSerializer(queryset, many=True)
-        return Response(serializer.data)
+        # store in cache
+        cache.set(cache_key, response_data, timeout=COMMENT_LIST_TTL)
+
+        return Response(response_data)
 
     @action(detail=True, methods=["get"], url_path="tree")
     def tree(self, request: Request, pk: str = None) -> Response:
