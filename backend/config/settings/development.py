@@ -1,5 +1,7 @@
 from datetime import timedelta
 
+from django.conf import settings
+
 from .base import *
 
 
@@ -11,4 +13,6 @@ EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "SIGNING_KEY": settings.SECRET_KEY,  # this is the default
+    "ALGORITHM": "HS256",
 }
