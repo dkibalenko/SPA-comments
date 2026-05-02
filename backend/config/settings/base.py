@@ -165,9 +165,13 @@ LOGGING = {
     "loggers": {
         "django": {
             "handlers": ["console"],
-            "level": "INFO",      # Django's own logs at INFO
+            "level": "WARNING",      # Django's own logs at INFO
             "propagate": False,
         },
+        "daphne": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False},
         "apps": {
             "handlers": ["console"],
             "level": "DEBUG",     # app code at DEBUG
