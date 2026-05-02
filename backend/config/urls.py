@@ -18,11 +18,31 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework.reverse import reverse
 
 from debug_toolbar.toolbar import debug_toolbar_urls
 
+
+@api_view(["GET"])
+def api_root(request, format=None):
+    """API root — lists all available endpoints."""
+    return Response(
+        {
+            "comments": reverse(
+                "comments-list", request=request, format=format
+            ),
+            "captcha": reverse(
+                "captcha-generate", request=request, format=format
+            ),
+        }
+    )
+
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path("api/", api_root, name="api-root"),
     path("api/", include("apps.comments.urls")),
     path("api/", include("apps.captcha_app.urls")),
 ] + debug_toolbar_urls()
