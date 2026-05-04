@@ -160,7 +160,7 @@ LOGGING = {
     },
     "root": {
         "handlers": ["console"],
-        "level": "DEBUG",
+        "level": "INFO",
     },
     "loggers": {
         "django": {
@@ -171,7 +171,23 @@ LOGGING = {
         "daphne": {
             "handlers": ["console"],
             "level": "WARNING",
-            "propagate": False},
+            "propagate": False
+        },
+        "celery": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False
+        },
+        "celery.app.trace": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False
+        },
+        "PIL": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False
+        },
         "apps": {
             "handlers": ["console"],
             "level": "DEBUG",     # app code at DEBUG
