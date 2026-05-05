@@ -1,5 +1,6 @@
 from django.db import connection
 from django.db.models import Count
+from django.db.models.functions import Lower
 
 from apps.comments.models import Comment
 
@@ -43,8 +44,12 @@ class CommentRepository:
         return (
             Comment.objects
             .filter(parent__isnull=True)
-            .select_related("user")
-            .annotate(reply_count=Count("replies"))
+            .select_related("user", "attachment")
+            .annotate(
+                reply_count=Count("replies"),
+                # LOWER(users_user.username) in SELECT
+                username_lower=Lower("user__username"),
+            )
             .order_by("-created_at")
         )
 
@@ -74,9 +79,13 @@ class CommentRepository:
                     u.email,
                     u.home_page,
                     0                    AS depth,
-                    ARRAY[c.id::text]    AS path
+                    ARRAY[c.id::text]    AS path,
+                    a.file_type          AS attachment_type,
+                    a.original_filename  AS attachment_filename,
+                    a.storage_path       AS attachment_path
                 FROM comments_comment c
                 JOIN users_user u ON c.user_id = u.id
+                LEFT JOIN attachments_attachment a ON a.comment_id = c.id
                 WHERE c.id = %s
 
                 UNION ALL
@@ -91,9 +100,13 @@ class CommentRepository:
                     u.email,
                     u.home_page,
                     ct.depth + 1,
-                    ct.path || c.id::text
+                    ct.path || c.id::text,
+                    a.file_type,
+                    a.original_filename,
+                    a.storage_path
                 FROM comments_comment c
                 JOIN users_user u ON c.user_id = u.id
+                LEFT JOIN attachments_attachment a ON a.comment_id = c.id
                 INNER JOIN comment_tree ct ON c.parent_id = ct.id
                 WHERE ct.depth < 50      -- guard against pathological data
 
