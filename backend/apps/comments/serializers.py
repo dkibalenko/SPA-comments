@@ -3,7 +3,7 @@ import re
 from rest_framework import serializers
 
 from apps.comments.models import Comment
-from apps.users.serializers import UserIdentitySerializer, UserOutputSerializer
+from apps.users.serializers import UserOutputSerializer
 from apps.attachments.serializers import AttachmentSerializer
 
 
