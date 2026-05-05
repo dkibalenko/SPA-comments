@@ -14,11 +14,20 @@
     <div class="comment-body" v-html="comment.text" />
 
     <!-- Attachment -->
-    <div v-if="comment.attachment" class="attachment">
-      <a :href="comment.attachment.storage_path" target="_blank">
-        📎 {{ comment.attachment.original_filename }}
-      </a>
+    <div v-if="attachment" class="attachment">
+      <button class="attach-btn" @click="lightboxOpen = true">
+        <span v-if="attachment.file_type === 'image'">🖼</span>
+        <span v-else>📄</span>
+        {{ attachment.original_filename }}
+      </button>
     </div>
+
+    <!-- Lightbox -->
+    <LightboxViewer
+      :file="attachment"
+      :visible="lightboxOpen"
+      @close="lightboxOpen = false"
+    />
 
     <!-- Reply button -->
     <button class="reply-btn" @click="toggleReplies">
@@ -43,7 +52,8 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import LightboxViewer from './LightboxViewer.vue'
 import api from '../api/client.js'
 
 const props = defineProps({
@@ -56,15 +66,26 @@ defineEmits(['reply'])
 const showReplies = ref(false)
 const replies = ref([])
 const loaded = ref(false)
+const lightboxOpen = ref(false)
 
-const replyCount = computed(() => props.comment.reply_count ?? 0)
-const hasReplies  = computed(() => replies.value.length > 0)
+// reply_count exists on list items; for tree items check embedded replies
+const replyCount = computed(() =>
+  props.comment.reply_count ?? props.comment.replies?.length ?? 0
+)
+const hasReplies = computed(() => replies.value.length > 0)
+
+// If the comment already has replies embedded (from tree CTE), use them directly
+onMounted(() => {
+  if (props.comment.replies?.length) {
+    replies.value = props.comment.replies
+    loaded.value = true
+  }
+})
 
 async function toggleReplies() {
   if (!loaded.value && replyCount.value > 0) {
-    // Fetch the full tree for this root comment
+    // List-level item — fetch tree from API
     const res = await api.getCommentTree(props.comment.id)
-    // The tree response is [root + replies nested]
     replies.value = res.data[0]?.replies ?? []
     loaded.value = true
   }
@@ -75,6 +96,22 @@ function formatDate(iso) {
   if (!iso) return ''
   return new Date(iso).toLocaleString()
 }
+
+const attachment = computed(() => {
+  if (props.comment.attachment) {
+    return props.comment.attachment
+  }
+  if (props.comment.attachment_path) {
+    const path = props.comment.attachment_path
+    const url = path.startsWith('http') ? path : `/media/${path}`
+    return {
+      file_type: props.comment.attachment_type,
+      original_filename: props.comment.attachment_filename,
+      url,
+    }
+  }
+  return null
+})
 </script>
 
 <style scoped>
@@ -94,6 +131,20 @@ function formatDate(iso) {
 .meta { font-size: 0.8rem; color: #888; }
 .comment-body { line-height: 1.6; }
 .attachment { margin-top: 8px; font-size: 0.85rem; }
+.attach-btn {
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s;
+}
+.attach-btn:hover { background: #e8e8e8; }
 .reply-btn {
   margin-top: 8px;
   margin-right: 8px;
