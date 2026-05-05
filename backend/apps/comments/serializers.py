@@ -4,6 +4,7 @@ from rest_framework import serializers
 
 from apps.comments.models import Comment
 from apps.users.serializers import UserIdentitySerializer, UserOutputSerializer
+from apps.attachments.serializers import AttachmentSerializer
 
 
 class CommentTreeSerializer(serializers.Serializer):
@@ -24,6 +25,11 @@ class CommentTreeSerializer(serializers.Serializer):
     depth = serializers.IntegerField()
     replies = serializers.SerializerMethodField()
 
+    # Attachment fields from CTE
+    attachment_type     = serializers.CharField(allow_null=True)
+    attachment_filename = serializers.CharField(allow_null=True)
+    attachment_path     = serializers.CharField(allow_null=True)
+
     def get_replies(self, obj: dict) -> list:
         """Recursively serialize replies.
 
@@ -41,10 +47,18 @@ class CommentListSerializer(serializers.ModelSerializer):
     """
     user = UserOutputSerializer(read_only=True)
     reply_count = serializers.IntegerField(read_only=True)
+    attachment = AttachmentSerializer(read_only=True)
 
     class Meta:
         model = Comment
-        fields = ["id", "user", "text", "created_at", "reply_count"]
+        fields = [
+            "id",
+            "user",
+            "text",
+            "created_at",
+            "reply_count",
+            "attachment"
+        ]
 
 
 class CommentCreateSerializer(serializers.Serializer):

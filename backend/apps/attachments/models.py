@@ -11,7 +11,7 @@ class AttachmentType(models.TextChoices):
 class Attachment(models.Model):
     """One optional file per comment.
 
-    Images are resized to max 320x240 before storate.
+    Images are resized to max 320x240 before storage.
     Text files are capped at 100KB
     """
     id = models.UUIDField(
