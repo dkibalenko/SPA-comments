@@ -135,11 +135,17 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
         queryset = self.filter_queryset(self.get_queryset())
         page_obj = self.paginate_queryset(queryset)
 
+        serializer_context = {"request": request}
+
         if page_obj is not None:
-            serializer = CommentListSerializer(page_obj, many=True)
+            serializer = CommentListSerializer(
+                page_obj, many=True, context=serializer_context
+            )
             response_data = self.get_paginated_response(serializer.data).data
         else:
-            serializer = CommentListSerializer(queryset, many=True)
+            serializer = CommentListSerializer(
+                queryset, many=True, context=serializer_context
+            )
             response_data = serializer.data
 
         # store in cache
