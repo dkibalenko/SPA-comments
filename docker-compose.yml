@@ -37,7 +37,7 @@ services:
     command: daphne -b 0.0.0.0 -p 8000 config.asgi:application
     volumes:
       - ./backend:/app
-      - media_data:/app/media
+      - ./media:/app/media        # ← bind mount, host controls permissions
       - static_data:/app/staticfiles
     ports:
       - "8000:8000"                       # direct access during dev
@@ -59,7 +59,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     restart: unless-stopped
-    command: celery -A config.celery_app worker --loglevel=warning --concurrency=4 -f /dev/null
+    command: celery -A config.celery_app worker --loglevel=info --concurrency=4
     volumes:
       - ./backend:/app
     env_file: .env
@@ -103,11 +103,10 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - static_data:/app/staticfiles:ro
-      - media_data:/app/media:ro
+      - ./media:/app/media  # ← same bind mount, read-only for nginx
     depends_on:
       - backend
 
 volumes:
   postgres_data:
-  media_data:
   static_data:
