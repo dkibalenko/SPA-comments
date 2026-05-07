@@ -79,7 +79,7 @@ class CommentRepository:
                     u.email,
                     u.home_page,
                     0                    AS depth,
-                    ARRAY[c.id::text]    AS path,
+                    ARRAY[c.id::text]    AS path,  --chronological tree order ([root_id, child_id, gchild_id..])
                     a.file_type          AS attachment_type,
                     a.original_filename  AS attachment_filename,
                     a.storage_path       AS attachment_path
