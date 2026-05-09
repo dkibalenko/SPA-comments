@@ -27,6 +27,11 @@ class ImageProcessor(AttachmentProcessorInterface):
     """
 
     def validate(self) -> None:
+        """Check MIME type, extension, and size limits for images.
+
+        Raises UnsupportedFileTypeError if MIME type or extension is unallowed.
+        Raises FileTooLargeError if file size exceeds IMAGE_MAX_SIZE_BYTES.
+        """
         ext = self._extension()
         if (
             self.file.content_type not in ALLOWED_IMAGE_TYPES
