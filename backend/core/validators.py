@@ -69,7 +69,7 @@ def _validate_xhtml_closure(text: str) -> None:
                 )
             stack.pop()
 
-    if stack:  # empty stack is a proof all tags match and closed
+    if stack:  # pragma: no cover
         raise ValidationError(
             f"Unclosed tag(s): {', '.join(f'<{t}>' for t in stack)}."
         )
