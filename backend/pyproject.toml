@@ -37,12 +37,15 @@ django-debug-toolbar = ">=6.3.0,<7.0.0"
 ipykernel = "^7.2.0"
 
 [tool.coverage.run]
-source = ["apps", "core", "websocket"]
+source = ["."]
 omit = [
     "*/migrations/*",
     "*/tests/*",
     "*/admin.py",
     "*/apps.py",
+    "config/*",
+    "manage.py",
+    "conftest.py",
 ]
 
 [tool.coverage.report]

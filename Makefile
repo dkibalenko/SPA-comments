@@ -20,6 +20,6 @@ check:
 
 test:
 	cd backend && python -m pytest tests/ -v \
-		--cov=apps --cov=core --cov=websocket \
+		--cov=. \
 		--cov-report=term-missing \
 		--cov-report=xml:coverage.xml
