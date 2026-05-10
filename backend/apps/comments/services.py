@@ -186,7 +186,8 @@ class CommentService:
         """Expose the top-level queryset for the view's filter+paginate flow"""
         return self.comment_repo.get_top_level_queryset()
 
-    def _build_tree(self, flat_rows: list[dict]) -> list[dict]:
+    @staticmethod
+    def _build_tree(flat_rows: list[dict]) -> list[dict]:
         """Convert flat CTE result into nested dict structure.
 
         O(n) — single pass. Every node is indexed by id first,
@@ -210,6 +211,7 @@ class CommentService:
             else:
                 parent = nodes.get(str(row["parent_id"]))
                 if parent:
+                    # orphan is never appended anywhere - it disappears
                     parent["replies"].append(node)
 
         return roots

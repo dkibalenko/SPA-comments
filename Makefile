@@ -1,4 +1,4 @@
-.PHONY: up down build logs shell migrate
+.PHONY: up down build logs shell migrate test
 
 up:
 	docker compose up --build -d
@@ -17,3 +17,9 @@ migrate:
 
 check:
 	docker compose exec backend python manage.py check
+
+test:
+	cd backend && python -m pytest tests/ -v \
+		--cov=. \
+		--cov-report=term-missing \
+		--cov-report=xml:coverage.xml

@@ -40,10 +40,10 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
     pagination_class = CommentPagination
     filterset_class = CommentFilter
 
-    def __init__(self, **kwargs):
+    def __init__(self, service = None, attachment_service = None, **kwargs):
         super().__init__(**kwargs)
-        self.service = CommentService()
-        self.attachment_service = AttachmentService()
+        self.service = service or CommentService()
+        self.attachment_service = attachment_service or AttachmentService()
 
     def get_queryset(self):
         """Return top-level queryset for list + filter + paginate flow."""
@@ -60,21 +60,21 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
 
         Accepts multipart/form-data so file + fields arrive together.
         """
-        serializer = CommentCreateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)  # return HTTP 400 by default
+        serializer = CommentCreateSerializer(data = request.data)
+        serializer.is_valid(raise_exception = True)  # return default HTTP 400
         data = serializer.validated_data
 
         try:
             result = self.service.create_comment(
-                username=data["username"],
-                email=data["email"],
-                text=data["text"],
-                ip_address=request.META.get("REMOTE_ADDR", ""),
-                user_agent=request.META.get("HTTP_USER_AGENT", ""),
-                captcha_token=data["captcha_token"],
-                captcha_answer=data["captcha_answer"],
-                home_page=data.get("home_page"),
-                parent_id=str(data["parent_id"]) if data.get(
+                username = data["username"],
+                email = data["email"],
+                text = data["text"],
+                ip_address = request.META.get("REMOTE_ADDR", ""),
+                user_agent = request.META.get("HTTP_USER_AGENT", ""),
+                captcha_token = data["captcha_token"],
+                captcha_answer = data["captcha_answer"],
+                home_page = data.get("home_page"),
+                parent_id = str(data["parent_id"]) if data.get(
                     "parent_id"
                 ) else None
             )
@@ -100,7 +100,7 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
                 comment.delete()
                 return Response(
                     {"detail": str(exc)},
-                    status=status.HTTP_400_BAD_REQUEST,
+                    status = status.HTTP_400_BAD_REQUEST,
                 )
 
         return Response(
@@ -149,11 +149,11 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
             response_data = serializer.data
 
         # store in cache
-        cache.set(cache_key, response_data, timeout=COMMENT_LIST_TTL)
+        cache.set(cache_key, response_data, timeout = COMMENT_LIST_TTL)
 
         return Response(response_data)
 
-    @action(detail=True, methods=["get"], url_path="tree")
+    @action(detail = True, methods = ["get"], url_path = "tree")
     def tree(self, request: Request, pk: str = None) -> Response:
         """Return the full nested reply tree for a single comment."""
         try:
@@ -164,5 +164,5 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        serializer = CommentTreeSerializer(tree_data, many=True)
+        serializer = CommentTreeSerializer(tree_data, many = True)
         return Response(serializer.data)
