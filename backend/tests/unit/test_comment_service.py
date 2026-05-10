@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 
 from apps.comments.services import CommentService
-from core.exceptions import ValidationError
+from core.exceptions import NotFoundError, ValidationError
 
 
 # helpers
@@ -147,3 +147,50 @@ class TestFindRootId:
         service.comment_repo.get_by_id.side_effect = [a, b]
         # after visiting a then b, current_id becomes "a-id" again → cycle detected
         assert service._find_root_id("a-id") == "a-id"
+
+
+# CommentService.get_tree
+
+class TestGetTree:
+
+    @pytest.fixture
+    def service(self):
+        return CommentService(comment_repo = MagicMock())
+
+    def test_cache_hit_returns_cached_data_without_hitting_repo(self, service):
+        """If Redis has the tree, return it immediately - no DB call."""
+        cached_tree = [{"id": "root-id", "replies": []}]
+
+        with patch("django.core.cache.cache.get", return_value = cached_tree):
+            result = service.get_tree("root-id")
+
+        assert result is cached_tree
+        service.comment_repo.get_tree.assert_not_called()
+
+    def test_cache_miss_queries_repo_builds_tree_and_caches_result(self, service):
+        """On cache miss: call repo, build nested tree, store in cache, return tree."""
+        flat_rows = [
+            {"id": "root-id", "parent_id": None, "text": "hi",
+             "created_at": None, "username": "u", "email": "e@e.com",
+             "home_page": None, "depth": 0, "path": ["root-id"],
+             "attachment_type": None, "attachment_filename": None,
+             "attachment_path": None},
+        ]
+        service.comment_repo.get_tree.return_value = flat_rows
+
+        with patch("django.core.cache.cache.get", return_value=None), \
+             patch("django.core.cache.cache.set") as mock_set:
+            result = service.get_tree("root-id")
+
+        assert len(result) == 1
+        assert result[0]["id"] == "root-id"
+        mock_set.assert_called_once()
+
+    def test_cache_miss_with_empty_repo_raises_not_found(self, service):
+        """If the repo returns nothing (root_id doesn't exist), raise NotFoundError."""
+        service.comment_repo.get_tree.return_value = []
+
+        with patch("django.core.cache.cache.get", return_value=None), \
+             patch("django.core.cache.cache.set"):
+            with pytest.raises(NotFoundError):
+                service.get_tree("nonexistent-id")
