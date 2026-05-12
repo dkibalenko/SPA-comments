@@ -170,11 +170,19 @@ class TestGetTree:
     def test_cache_miss_queries_repo_builds_tree_and_caches_result(self, service):
         """On cache miss: call repo, build nested tree, store in cache, return tree."""
         flat_rows = [
-            {"id": "root-id", "parent_id": None, "text": "hi",
-             "created_at": None, "username": "u", "email": "e@e.com",
-             "home_page": None, "depth": 0, "path": ["root-id"],
-             "attachment_type": None, "attachment_filename": None,
-             "attachment_path": None},
+            {
+                "id": "root-id",
+                "parent_id": None,
+                "text": "hi",
+                "created_at": None,
+                "username": "u",
+                "email": "e@e.com",
+                "home_page": None,
+                "depth": 0,
+                "path": ["root-id"],
+                "attachment_type": None,
+                "attachment_filename": None,
+                "attachment_path": None},
         ]
         service.comment_repo.get_tree.return_value = flat_rows
 
