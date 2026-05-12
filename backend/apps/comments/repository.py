@@ -39,7 +39,8 @@ class CommentRepository:
     def get_top_level_queryset(self):
         """Return a non-evaluated queryset of top-level comments only.
 
-        Annotate with `reply_count` and order by `created_at` desc.
+        Annotated with `reply_count`, `username_lower` and ordered by
+        `created_at` desc.
         """
         return (
             Comment.objects
@@ -56,7 +57,7 @@ class CommentRepository:
     def get_tree(self, root_id: str) -> list[dict]:
         """Fetch an entire comment thread in one recursive CTE query.
 
-        Returns a flat list of dicts ordered by `path` — an array
+        Returns a flat list of dicts ordered by `path` - an array
         that encodes the ancestry of each node. Sorting by path
         gives correct visual tree order (parent always before children,
         siblings in chronological order).

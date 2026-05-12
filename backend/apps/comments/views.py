@@ -92,7 +92,7 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
         if uploaded_file:
             try:
                 self.attachment_service.handle_upload(
-                    comment_id=str(comment.id),
+                    comment_id = str(comment.id),
                     file=uploaded_file,
                 )
             except (UnsupportedFileTypeError, FileTooLargeError) as exc:
@@ -113,7 +113,7 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
         )
 
     def list(self, request: Request, *args, **kwargs) -> Response:
-        """Paginated sortable list — served from cache when available.
+        """Paginated sortable list - served from cache when available.
 
         Cache key encodes ordering + page, so each unique combination 
         gets its own cache entry.
@@ -121,7 +121,7 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
         # build cache key from the actual request params
         ordering = request.query_params.get("ordering", "-created_at")
         page = request.query_params.get("page", "1")
-        cache_key = make_list_cache_key(ordering=ordering, page=page)
+        cache_key = make_list_cache_key(ordering = ordering, page = page)
 
         # try cache first
         cached_response = cache.get(cache_key)
@@ -139,12 +139,12 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
 
         if page_obj is not None:
             serializer = CommentListSerializer(
-                page_obj, many=True, context=serializer_context
+                page_obj, many = True, context = serializer_context
             )
             response_data = self.get_paginated_response(serializer.data).data
         else:
             serializer = CommentListSerializer(
-                queryset, many=True, context=serializer_context
+                queryset, many = True, context = serializer_context
             )
             response_data = serializer.data
 
@@ -157,7 +157,7 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
     def tree(self, request: Request, pk: str = None) -> Response:
         """Return the full nested reply tree for a single comment."""
         try:
-            tree_data = self.service.get_tree(root_id=pk)
+            tree_data = self.service.get_tree(root_id = pk)
         except NotFoundError as exc:
             return Response(
                 {"detail": str(exc)},
