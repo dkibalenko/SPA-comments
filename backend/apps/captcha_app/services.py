@@ -44,7 +44,7 @@ class CaptchaService:
 
         image_b64 = self._render_image(answer)
 
-        print(f"DEBUG CAPTCHA: {answer}")
+        print(f"DEBUG CAPTCHA: {answer}")  # REMOVE IT
 
         return {
             "token": token,

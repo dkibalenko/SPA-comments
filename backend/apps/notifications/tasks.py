@@ -12,10 +12,10 @@ log = logging.getLogger(__name__)
 
 
 @shared_task(
-    bind=True,
-    max_retries=3,
-    default_retry_delay=60,    # retry after 60 seconds
-    name="notifications.notify_reply_author",
+    bind = True,
+    max_retries = 3,
+    default_retry_delay = 60,    # retry after 60 seconds
+    name = "notifications.notify_reply_author",
 )
 def notify_reply_author(self, comment_id: str) -> None:
     """Async task: email the parent comment's author about a new reply.
@@ -39,12 +39,12 @@ def notify_reply_author(self, comment_id: str) -> None:
         reply = (
             Comment.objects
             .select_related("user", "parent__user")
-            .get(id=comment_id)
+            .get(id = comment_id)
         )
 
         if not reply.parent:
             log.warning(
-                f"Comment {comment_id} has no parent — skipping notification"
+                f"Comment {comment_id} has no parent - skipping notification"
             )
             return
 
@@ -53,22 +53,22 @@ def notify_reply_author(self, comment_id: str) -> None:
         # don't notify if the author is replying to themselves
         if parent.user_id == reply.user_id:
             log.debug(
-                f"Self-reply by user {reply.user_id} — skipping notification"
+                f"Self-reply by user {reply.user_id} - skipping notification"
             )
             return
 
         data = ReplyNotificationData(
-            recipient_email=parent.user.email,
-            recipient_username=parent.user.username,
-            reply_author=reply.user.username,
-            parent_text=parent.text,
-            reply_text=reply.text,
-            comment_id=str(reply.id),
+            recipient_email = parent.user.email,
+            recipient_username = parent.user.username,
+            reply_author = reply.user.username,
+            parent_text = parent.text,
+            reply_text = reply.text,
+            comment_id = str(reply.id),
         )
 
         send_reply_notification(data)
 
     except Exception as exc:
-        log.error(f"notify_reply_author failed: {exc}", exc_info=True)
+        log.error(f"notify_reply_author failed: {exc}", exc_info = True)
         # Celery retry - raise retry not return
-        raise self.retry(exc=exc)
+        raise self.retry(exc = exc)

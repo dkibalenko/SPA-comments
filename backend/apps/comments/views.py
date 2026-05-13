@@ -60,7 +60,7 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
 
         Accepts multipart/form-data so file + fields arrive together.
         """
-        serializer = CommentCreateSerializer(data = request.data)
+        serializer = self.get_serializer(data = request.data)
         serializer.is_valid(raise_exception = True)  # return default HTTP 400
         data = serializer.validated_data
 
@@ -132,15 +132,17 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
         log.debug(f"Cache MISS: list ordering={ordering} page={page}")
 
         # cache miss - build response normally
-        queryset = self.filter_queryset(self.get_queryset())
-        page_obj = self.paginate_queryset(queryset)
+        queryset = self.filter_queryset(self.get_queryset())  # applies CommentFilter
+        page_obj = self.paginate_queryset(queryset)  # slices the DB query
 
+        # for absolute URL generation in AttachmentSerializer
         serializer_context = {"request": request}
 
         if page_obj is not None:
             serializer = CommentListSerializer(
                 page_obj, many = True, context = serializer_context
             )
+            # wrap the data in {count, next, previous, results}
             response_data = self.get_paginated_response(serializer.data).data
         else:
             serializer = CommentListSerializer(

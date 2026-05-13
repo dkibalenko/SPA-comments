@@ -28,7 +28,7 @@ def use_local_memory_cache():
     top-level comment creation.
     """
     with override_settings(
-        CACHES={
+        CACHES = {
             "default": {
                 "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
                 "LOCATION": str(uuid.uuid4()),  # called each time the fixture runs - every test gets its own slot in _caches
