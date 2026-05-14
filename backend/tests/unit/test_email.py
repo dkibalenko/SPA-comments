@@ -31,7 +31,6 @@ class TestSendReplyNotification:
         """Verify that the recipient email is correctly passed to send_mail."""
         with patch("apps.notifications.emails.send_mail") as mock_send:
             send_reply_notification(_make_data(recipient_email = "target@example.com"))
-        _, kwargs = mock_send.call_args
         assert "target@example.com" in mock_send.call_args[1]["recipient_list"]
 
     def test_subject_is_string(self):

@@ -19,9 +19,10 @@ def _make_file(content_type = "image/png", name = "photo.png"):
 class TestHandleUpload:
 
     def _run(self, file, comment_id="comment-uuid"):
-        with patch("apps.attachments.services.AttachmentStrategy.get_processor") as mock_get, \
-             patch("apps.attachments.services.Attachment.objects.create") as mock_create:
-
+        with (
+            patch("apps.attachments.services.AttachmentStrategy.get_processor") as mock_get,
+            patch("apps.attachments.services.Attachment.objects.create") as mock_create
+        ):
             mock_processor = MagicMock()
             mock_processor.process.return_value = MagicMock()
             mock_get.return_value = mock_processor
