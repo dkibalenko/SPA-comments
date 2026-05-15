@@ -36,16 +36,16 @@ def send_reply_notification(data: ReplyNotificationData) -> None:
 
     try:
         send_mail(
-            subject=subject,
-            message=message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[data.recipient_email],
-            fail_silently=False,
+            subject = subject,
+            message = message,
+            from_email = settings.DEFAULT_FROM_EMAIL,
+            recipient_list = [data.recipient_email],
+            fail_silently = False,
         )
         log.info(f"Reply notification sent to {data.recipient_email}")
     except Exception as exc:
         log.error(
             f"Failed to send reply message to {data.recipient_email}: {exc}",
-            exc_info=True,
+            exc_info = True,
         )
         raise   # propagates back to the Celery task - Celery can retry

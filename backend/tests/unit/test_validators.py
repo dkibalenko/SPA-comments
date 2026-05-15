@@ -114,16 +114,16 @@ class TestValidateXhtmlClosure:
             _validate_xhtml_closure(text)
 
     def test_unclosed_error_message(self):
-        with pytest.raises(ValidationError, match="unclosed"):
+        with pytest.raises(ValidationError, match = "unclosed"):
             _validate_xhtml_closure("<strong>no closing tag")
 
     def test_misnested_error_message(self):
-        with pytest.raises(ValidationError, match="Misnested"):
+        with pytest.raises(ValidationError, match = "Misnested"):
             _validate_xhtml_closure("<strong><i>text</strong></i>")
 
     def test_unclosed_inner_tag_error_message(self):
         # outer closed correctly, but inner <i> is not
-        with pytest.raises(ValidationError, match="unclosed"):
+        with pytest.raises(ValidationError, match = "unclosed"):
             _validate_xhtml_closure("<strong><i>text</strong>")
 
 

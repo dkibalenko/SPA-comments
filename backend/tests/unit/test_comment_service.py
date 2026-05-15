@@ -44,8 +44,10 @@ class TestCreateComment:
         service.comment_repo.get_by_id.return_value = mock_comment
         service.user_repo.get_or_create_by_identity.return_value = (MagicMock(), True)
 
-        with patch("apps.comments.services.issue_identity_token", return_value="jwt-tok"), \
-             patch("django.db.transaction.on_commit"):
+        with (
+            patch("apps.comments.services.issue_identity_token", return_value="jwt-tok"),
+            patch("django.db.transaction.on_commit")
+        ):
             result = service.create_comment(**_valid_kwargs())
 
         assert result["comment"] is mock_comment
@@ -77,9 +79,11 @@ class TestCreateComment:
         service.comment_repo.get_by_id.return_value = mock_comment
         service.user_repo.get_or_create_by_identity.return_value = (MagicMock(), True)
 
-        with patch("apps.comments.services.issue_identity_token", return_value="tok"), \
-             patch("django.db.transaction.on_commit"), \
-             patch("apps.comments.services.invalidate_list_cache") as mock_inv:
+        with (
+            patch("apps.comments.services.issue_identity_token", return_value="tok"),
+            patch("django.db.transaction.on_commit"),
+            patch("apps.comments.services.invalidate_list_cache") as mock_inv
+        ):
             service.create_comment(**_valid_kwargs())
 
         mock_inv.assert_called_once()
@@ -98,9 +102,11 @@ class TestCreateComment:
 
         kwargs = {**_valid_kwargs(), "parent_id": "parent-uuid"}
 
-        with patch("apps.comments.services.issue_identity_token", return_value="tok"), \
-             patch("django.db.transaction.on_commit"), \
-             patch("apps.comments.services.invalidate_tree_cache") as mock_inv:
+        with (
+            patch("apps.comments.services.issue_identity_token", return_value="tok"),
+            patch("django.db.transaction.on_commit"),
+            patch("apps.comments.services.invalidate_tree_cache") as mock_inv
+        ):
             service.create_comment(**kwargs)
 
         mock_inv.assert_called_once()
@@ -186,8 +192,10 @@ class TestGetTree:
         ]
         service.comment_repo.get_tree.return_value = flat_rows
 
-        with patch("django.core.cache.cache.get", return_value=None), \
-             patch("django.core.cache.cache.set") as mock_set:
+        with (
+            patch("django.core.cache.cache.get", return_value=None),
+            patch("django.core.cache.cache.set") as mock_set
+        ):
             result = service.get_tree("root-id")
 
         assert len(result) == 1
@@ -198,7 +206,9 @@ class TestGetTree:
         """If the repo returns nothing (root_id doesn't exist), raise NotFoundError."""
         service.comment_repo.get_tree.return_value = []
 
-        with patch("django.core.cache.cache.get", return_value=None), \
-             patch("django.core.cache.cache.set"):
+        with (
+            patch("django.core.cache.cache.get", return_value=None),
+            patch("django.core.cache.cache.set")
+        ):
             with pytest.raises(NotFoundError):
                 service.get_tree("nonexistent-id")

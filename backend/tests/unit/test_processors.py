@@ -31,15 +31,15 @@ def make_image_file(
     """
     buf = BytesIO()
     mode = "P" if fmt == "GIF" else "RGB"
-    Image.new(mode, (width, height)).save(buf, format=fmt)
+    Image.new(mode, (width, height)).save(buf, format = fmt)
     buf.seek(0)
     return InMemoryUploadedFile(
-        file=buf,
-        field_name="attachment",
-        name=name,
-        content_type=content_type,
-        size=buf.getbuffer().nbytes,
-        charset=None,
+        file = buf,
+        field_name = "attachment",
+        name = name,
+        content_type = content_type,
+        size = buf.getbuffer().nbytes,
+        charset = None,
     )
 
 
@@ -51,12 +51,12 @@ def make_text_file(
     """Creates an in-memory text file with the specified content."""
     buf = BytesIO(content)
     return InMemoryUploadedFile(
-        file=buf,
-        field_name="attachment",
-        name=name,
-        content_type=content_type,
-        size=len(content),
-        charset=None,
+        file = buf,
+        field_name = "attachment",
+        name = name,
+        content_type = content_type,
+        size = len(content),
+        charset = None,
     )
 
 
@@ -75,31 +75,31 @@ class TestImageProcessorValidate:
     )
     def test_allowed_types_pass(self, name, content_type, fmt):
         """Test that valid image types and matching extensions pass validation."""
-        f = make_image_file(100, 100, fmt=fmt, content_type=content_type, name=name)
+        f = make_image_file(100, 100, fmt = fmt, content_type = content_type, name = name)
         ImageProcessor(f).validate()  # must not raise
 
     def test_unsupported_content_type_raises(self):
         """Test that a MIME type not in ALLOWED_IMAGE_TYPES raises an error."""
-        f = make_image_file(100, 100, name="photo.bmp", content_type="image/bmp")
+        f = make_image_file(100, 100, name = "photo.bmp", content_type = "image/bmp")
         with pytest.raises(UnsupportedFileTypeError):
             ImageProcessor(f).validate()
 
     def test_mismatched_extension_raises(self):
         """Test that a valid MIME type but extension not in ALLOWED_IMAGE_EXTENSIONS raises an error."""
-        f = make_image_file(100, 100, content_type="image/png", name="photo.bmp")
+        f = make_image_file(100, 100, content_type = "image/png", name = "photo.bmp")
         with pytest.raises(UnsupportedFileTypeError):
             ImageProcessor(f).validate()
 
     def test_file_exceeding_size_limit_raises(self):
         """Test that a file exceeding the size limit raises an error."""
-        f = make_image_file(100, 100, name="big.png")
+        f = make_image_file(100, 100, name = "big.png")
         f.size = IMAGE_MAX_SIZE_BYTES + 1
         with pytest.raises(FileTooLargeError):
             ImageProcessor(f).validate()
 
     def test_file_at_size_limit_passes(self):
         """Test that a file exactly at the size limit passes validation."""
-        f = make_image_file(100, 100, name="ok.png")
+        f = make_image_file(100, 100, name = "ok.png")
         f.size = IMAGE_MAX_SIZE_BYTES
         ImageProcessor(f).validate()  # at limit must pass
 
@@ -147,14 +147,14 @@ class TestImageProcessorProcess:
 
     def test_gif_converted_to_png_on_resize(self):
         """Test that a GIF image is converted to PNG format when resized."""
-        f = make_image_file(640, 480, fmt="GIF", content_type="image/gif", name="anim.gif")
+        f = make_image_file(640, 480, fmt = "GIF", content_type = "image/gif", name = "anim.gif")
         result = ImageProcessor(f).process()
         assert result.content_type == "image/png"
         assert result.name.endswith(".png")
 
     def test_jpeg_keeps_original_content_type_on_resize(self):
         """Test that a JPEG image keeps its content type after resizing."""
-        f = make_image_file(640, 480, fmt="JPEG", content_type="image/jpeg", name="photo.jpg")
+        f = make_image_file(640, 480, fmt = "JPEG", content_type = "image/jpeg", name = "photo.jpg")
         result = ImageProcessor(f).process()
         assert result.content_type == "image/jpeg"
 
@@ -172,29 +172,29 @@ class TestTextFileProcessorValidate:
 
     def test_valid_txt_passes(self):
         """Test that a valid text file with correct MIME type and extension passes validation."""
-        f = make_text_file(b"some text", name="note.txt", content_type="text/plain")
+        f = make_text_file(b"some text", name = "note.txt", content_type = "text/plain")
         TextFileProcessor(f).validate()  # must not raise
 
     def test_unsupported_content_type_raises(self):
         """Test that a MIME type not in ALLOWED_TEXT_TYPES raises an error."""
-        f = make_text_file(b"data", name="data.csv", content_type="text/csv")
+        f = make_text_file(b"data", name = "data.csv", content_type = "text/csv")
         with pytest.raises(UnsupportedFileTypeError):
             TextFileProcessor(f).validate()
 
     def test_wrong_extension_raises(self):
         """Test that a valid MIME type but extension not in ALLOWED_TEXT_EXTENSIONS raises an error."""
-        f = make_text_file(b"data", name="file.log", content_type="text/plain")
+        f = make_text_file(b"data", name = "file.log", content_type = "text/plain")
         with pytest.raises(UnsupportedFileTypeError):
             TextFileProcessor(f).validate()
 
     def test_file_at_size_limit_passes(self):
         """Test that a text file exactly at the size limit passes validation."""
-        f = make_text_file(b"x" * TEXT_MAX_SIZE_BYTES, name="big.txt")
+        f = make_text_file(b"x" * TEXT_MAX_SIZE_BYTES, name = "big.txt")
         TextFileProcessor(f).validate()  # exactly at limit — must pass
 
     def test_file_exceeding_size_limit_raises(self):
         """Test that a text file exceeding the size limit raises an error."""
-        f = make_text_file(b"x", name="big.txt")
+        f = make_text_file(b"x", name = "big.txt")
         f.size = TEXT_MAX_SIZE_BYTES + 1
         with pytest.raises(FileTooLargeError):
             TextFileProcessor(f).validate()

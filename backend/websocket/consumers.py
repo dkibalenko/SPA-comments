@@ -54,6 +54,7 @@ class CommentConsumer(AsyncWebsocketConsumer):
         This method name maps to the `type` field in `group_send` payload.
 
         :param event: The payload dict sent by `on_comment_created` handler.
+        :return: `None`. Sends JSON to client but does not return data to caller.
         """
         # remove the type key - client doesn't need Channels internals
         payload = {k: v for k, v in event.items() if k != "type"}

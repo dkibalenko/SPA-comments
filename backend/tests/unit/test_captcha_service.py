@@ -20,36 +20,46 @@ class TestCaptchaServiceValidate:
 
     def test_correct_answer_passes(self):
         """Matching answer (case-insensitive) must not raise."""
-        with patch("django.core.cache.cache.get", return_value = "abcdef"), \
-             patch("django.core.cache.cache.delete"):
+        with (
+            patch("django.core.cache.cache.get", return_value = "abcdef"),
+            patch("django.core.cache.cache.delete")
+        ):
             CaptchaService().validate(token = "tok", answer = "ABCDEF")  # must not raise
 
     def test_expired_or_missing_token_raises(self):
         """cache.get returning None means the token is expired or never existed."""
-        with patch("django.core.cache.cache.get", return_value = None), \
-             patch("django.core.cache.cache.delete"):
+        with (
+            patch("django.core.cache.cache.get", return_value = None),
+            patch("django.core.cache.cache.delete")
+        ):
             with pytest.raises(CaptchaError, match = "expired"):
                 CaptchaService().validate(token = "bad-tok", answer = "anything")
 
     def test_wrong_answer_raises(self):
         """A token that exists but the answer doesn't match must raise."""
-        with patch("django.core.cache.cache.get", return_value = "correct"), \
-             patch("django.core.cache.cache.delete"):
+        with (
+            patch("django.core.cache.cache.get", return_value = "correct"),
+            patch("django.core.cache.cache.delete")
+        ):
             with pytest.raises(CaptchaError, match = "Incorrect"):
                 CaptchaService().validate(token = "tok", answer = "wrong")
 
     def test_cache_key_deleted_on_correct_answer(self):
         """Key is consumed even when the answer is correct — one-time use."""
-        with patch("django.core.cache.cache.get", return_value = "abc123"), \
-             patch("django.core.cache.cache.delete") as mock_delete:
+        with (
+            patch("django.core.cache.cache.get", return_value = "abc123"),
+            patch("django.core.cache.cache.delete") as mock_delete
+        ):
             CaptchaService().validate(token = "tok", answer = "abc123")
 
         mock_delete.assert_called_once_with(f"{CAPTCHA_KEY_PREFIX}tok")
 
     def test_cache_key_deleted_on_wrong_answer(self):
         """Key must be deleted even when the answer is wrong — prevents brute-force."""
-        with patch("django.core.cache.cache.get", return_value = "abc123"), \
-             patch("django.core.cache.cache.delete") as mock_delete:
+        with (
+            patch("django.core.cache.cache.get", return_value = "abc123"),
+            patch("django.core.cache.cache.delete") as mock_delete
+        ):
             with pytest.raises(CaptchaError):
                 CaptchaService().validate(token = "tok", answer = "wrong")
 
@@ -57,14 +67,18 @@ class TestCaptchaServiceValidate:
 
     def test_answer_comparison_is_case_insensitive(self):
         """Stored answer is lowercased at generation; validation must also lowercase."""
-        with patch("django.core.cache.cache.get", return_value = "abc123"), \
-             patch("django.core.cache.cache.delete"):
+        with (
+            patch("django.core.cache.cache.get", return_value = "abc123"),
+            patch("django.core.cache.cache.delete")
+        ):
             CaptchaService().validate(token = "tok", answer = "ABC123")  # must not raise
 
     def test_answer_whitespace_is_stripped(self):
         """Leading/trailing whitespace in user input must not cause failure."""
-        with patch("django.core.cache.cache.get", return_value = "abc123"), \
-             patch("django.core.cache.cache.delete"):
+        with (
+            patch("django.core.cache.cache.get", return_value = "abc123"),
+            patch("django.core.cache.cache.delete")
+        ):
             CaptchaService().validate(token = "tok", answer = "  abc123  ")  # must not raise
 
 

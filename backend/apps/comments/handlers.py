@@ -49,6 +49,7 @@ def on_comment_created(sender, comment: Comment, **kwargs) -> None:
     try:
         # channel layer broadcasts to group
         # Redis queues message for all connected WS consumers in that group
+        # standard Channels-provided bridge and is safe to use in signal handlers
         async_to_sync(channel_layer.group_send)(COMMENTS_GROUP, payload)
         log.debug(
             f"Broadcasted comment {comment.id} to group '{COMMENTS_GROUP}'"

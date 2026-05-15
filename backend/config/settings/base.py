@@ -124,8 +124,8 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "core.pagination.CommentPagination",
     "PAGE_SIZE": 25,
     "DEFAULT_FILTER_BACKENDS": [
-        "django_filters.rest_framework.DjangoFilterBackend",
-        "rest_framework.filters.OrderingFilter",
+        "django_filters.rest_framework.DjangoFilterBackend",  # backend 1 - responsible for the sorting
+        # "rest_framework.filters.OrderingFilter",  # backend 2
     ],
 }
 
