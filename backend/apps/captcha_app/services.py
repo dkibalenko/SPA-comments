@@ -5,6 +5,7 @@ import uuid
 from io import BytesIO
 
 from captcha.image import ImageCaptcha
+from django.conf import settings
 from django.core.cache import cache
 
 from core.exceptions import CaptchaError
@@ -44,12 +45,13 @@ class CaptchaService:
 
         image_b64 = self._render_image(answer)
 
-        print(f"DEBUG CAPTCHA: {answer}")  # REMOVE IT
+        result = {"token": token, "image": image_b64}
 
-        return {
-            "token": token,
-            "image": image_b64,
-        }
+        if settings.DEBUG:
+            # exposed only in development
+            result["debug_answer"] = answer
+
+        return result
 
     def validate(self, token: str, answer: str) -> None:
         """Validate a CAPTCHA response and consume the token.
