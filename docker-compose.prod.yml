@@ -9,6 +9,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - comments_network
     command: >
       postgres
       -c shared_buffers=128MB
@@ -30,6 +32,8 @@ services:
     image: redis:7-alpine
     restart: unless-stopped
     command: redis-server --maxmemory 96mb --maxmemory-policy allkeys-lru
+    networks:
+      - comments_network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -50,7 +54,9 @@ services:
     volumes:
       - ./media:/app/media
       - static_data:/app/staticfiles
-    env_file: .env
+    networks:
+      - comments_network
+    env_file: .env.prod
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.production
       POSTGRES_HOST: db
@@ -74,7 +80,7 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     command: celery -A config.celery_app worker --loglevel=info --concurrency=1
-    env_file: .env
+    env_file: .env.prod
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.production
       POSTGRES_HOST: db
@@ -82,6 +88,8 @@ services:
       REDIS_CHANNELS_URL: redis://redis:6379/2
       REDIS_CELERY_URL: redis://redis:6379/3
       C_FORCE_ROOT: "true"
+    networks:
+      - comments_network
     depends_on:
       db:
         condition: service_healthy
@@ -97,11 +105,13 @@ services:
     image: nginx:alpine
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "8080:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - static_data:/app/staticfiles:ro
       - ./media:/app/media:ro
+    networks:
+      - comments_network
     depends_on:
       - backend
     deploy:
@@ -113,3 +123,7 @@ services:
 volumes:
   postgres_data:
   static_data:
+
+networks:
+  comments_network:
+    driver: bridge
