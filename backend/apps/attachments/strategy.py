@@ -20,8 +20,7 @@ class AttachmentStrategy:
 
     @classmethod
     def get_processor(
-        cls,
-        file: InMemoryUploadedFile
+        cls, file: InMemoryUploadedFile
     ) -> AttachmentProcessorInterface:
         """Resolve processor by MIME content type.
 

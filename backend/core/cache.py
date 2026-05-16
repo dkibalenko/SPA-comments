@@ -1,8 +1,8 @@
 from django.core.cache import cache
 
 # TTLs
-COMMENT_LIST_TTL = 60       # 60 seconds - short, list changes often
-COMMENT_TREE_TTL = 300      # 5 minutes - trees change less frequently
+COMMENT_LIST_TTL = 60  # 60 seconds - short, list changes often
+COMMENT_TREE_TTL = 300  # 5 minutes - trees change less frequently
 
 
 def make_list_cache_key(ordering: str, page: int) -> str:
@@ -28,6 +28,7 @@ def invalidate_list_cache() -> None:
     Uses pattern-based deletion via django-redis.
     """
     from django_redis import get_redis_connection
+
     redis = get_redis_connection("default")
     # delete all keys matching the list pattern
     pattern = "comments:list:*"

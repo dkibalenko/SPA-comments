@@ -40,7 +40,7 @@ class CaptchaService:
         cache_key = f"{CAPTCHA_KEY_PREFIX}{token}"
 
         # store lowercased answer - validation is case-insensitive
-        cache.set(cache_key, answer.lower(), timeout = CAPTCHA_TTL)
+        cache.set(cache_key, answer.lower(), timeout=CAPTCHA_TTL)
 
         image_b64 = self._render_image(answer)
 
@@ -75,14 +75,12 @@ class CaptchaService:
             )
 
         if answer.lower().strip() != stored_answer:
-            raise CaptchaError(
-                "Incorrect CAPTCHA answer. Please try again."
-            )
+            raise CaptchaError("Incorrect CAPTCHA answer. Please try again.")
 
     @staticmethod
     def _random_text() -> str:
         """Generate a random alphanumeric string of CAPTCHA_LENGTH chars."""
-        return "".join(random.choices(CAPTCHA_CHARS, k = CAPTCHA_LENGTH))
+        return "".join(random.choices(CAPTCHA_CHARS, k=CAPTCHA_LENGTH))
 
     @staticmethod
     def _render_image(text: str) -> str:
@@ -91,6 +89,6 @@ class CaptchaService:
         Uses the `captcha` library which wraps Pillow.
         Returns a data-URI-ready base64 string.
         """
-        generator = ImageCaptcha(width = 200, height = 60)
+        generator = ImageCaptcha(width=200, height=60)
         image_data: BytesIO = generator.generate(text)
         return base64.b64encode(image_data.read()).decode("utf-8")

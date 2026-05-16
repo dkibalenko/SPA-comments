@@ -33,5 +33,7 @@ class AttachmentSerializer(serializers.ModelSerializer):
         """
         request = self.context.get("request")
         if request:
-            return request.build_absolute_uri(obj.storage_path.url)  # prepends MEDIA_URL
+            return request.build_absolute_uri(
+                obj.storage_path.url
+            )  # prepends MEDIA_URL
         return obj.storage_path.url

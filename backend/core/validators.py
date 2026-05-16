@@ -27,7 +27,7 @@ def sanitize_comment_text(text: str) -> str:
         tags=ALLOWED_TAGS,
         attributes=ALLOWED_ATTRIBUTES,
         strip=True,
-        strip_comments=True
+        strip_comments=True,
     )
     _validate_xhtml_closure(cleaned)
     return cleaned

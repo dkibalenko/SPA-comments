@@ -36,7 +36,7 @@ def on_comment_created(sender, comment: Comment, **kwargs) -> None:
 
     # prepare WS payload
     payload = {
-        "type": "comment.broadcast",   # maps to consumer method name
+        "type": "comment.broadcast",  # maps to consumer method name
         "id": str(comment.id),
         "text": comment.text,
         "created_at": comment.created_at.isoformat(),

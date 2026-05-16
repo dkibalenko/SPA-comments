@@ -11,10 +11,10 @@ log = logging.getLogger(__name__)
 
 
 @shared_task(
-    bind = True,
-    max_retries = 3,
-    default_retry_delay = 60,    # retry after 60 seconds
-    name = "notifications.notify_reply_author",
+    bind=True,
+    max_retries=3,
+    default_retry_delay=60,  # retry after 60 seconds
+    name="notifications.notify_reply_author",
 )
 def notify_reply_author(self, comment_id: str) -> None:
     """Async task: email the parent comment's author about a new reply.
@@ -35,10 +35,8 @@ def notify_reply_author(self, comment_id: str) -> None:
         from apps.comments.models import Comment
 
         # fetch the reply with its parent and both users in one query
-        reply = (
-            Comment.objects
-            .select_related("user", "parent__user")
-            .get(id = comment_id)
+        reply = Comment.objects.select_related("user", "parent__user").get(
+            id=comment_id
         )
 
         if not reply.parent:
@@ -57,17 +55,17 @@ def notify_reply_author(self, comment_id: str) -> None:
             return
 
         data = ReplyNotificationData(
-            recipient_email = parent.user.email,
-            recipient_username = parent.user.username,
-            reply_author = reply.user.username,
-            parent_text = parent.text,
-            reply_text = reply.text,
-            comment_id = str(reply.id),
+            recipient_email=parent.user.email,
+            recipient_username=parent.user.username,
+            reply_author=reply.user.username,
+            parent_text=parent.text,
+            reply_text=reply.text,
+            comment_id=str(reply.id),
         )
 
         send_reply_notification(data)
 
     except Exception as exc:
-        log.error(f"notify_reply_author failed: {exc}", exc_info = True)
+        log.error(f"notify_reply_author failed: {exc}", exc_info=True)
         # Celery retry - raise retry not return
-        raise self.retry(exc = exc)
+        raise self.retry(exc=exc)

@@ -10,7 +10,7 @@ class UserRepository:
         email: str,
         ip_address: str,
         user_agent: str,
-        home_page: str | None = None
+        home_page: str | None = None,
     ) -> tuple[User, bool]:
         """Fetch existing user by username+email or create a new one.
 
@@ -28,8 +28,8 @@ class UserRepository:
             defaults={  # only used when create, not lookup
                 "home_page": home_page,
                 "ip_address": ip_address,
-                "user_agent": user_agent
-            }
+                "user_agent": user_agent,
+            },
         )
 
         if not created:

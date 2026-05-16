@@ -15,20 +15,21 @@ class CommentTreeSerializer(serializers.Serializer):
     working on ORM instances.
     Replies are serialized recursively — each reply is itself a full node.
     """
+
     id = serializers.UUIDField()
-    parent_id = serializers.UUIDField(allow_null = True)
+    parent_id = serializers.UUIDField(allow_null=True)
     text = serializers.CharField()
     created_at = serializers.DateTimeField()
     username = serializers.CharField()
     email = serializers.EmailField()
-    home_page = serializers.URLField(allow_null = True)
+    home_page = serializers.URLField(allow_null=True)
     depth = serializers.IntegerField()
     replies = serializers.SerializerMethodField()
 
     # Attachment fields from CTE
-    attachment_type = serializers.CharField(allow_null = True)
-    attachment_filename = serializers.CharField(allow_null = True)
-    attachment_path = serializers.CharField(allow_null = True)
+    attachment_type = serializers.CharField(allow_null=True)
+    attachment_filename = serializers.CharField(allow_null=True)
+    attachment_path = serializers.CharField(allow_null=True)
 
     def get_replies(self, obj: dict) -> list:
         """Recursively serialize replies.
@@ -36,7 +37,7 @@ class CommentTreeSerializer(serializers.Serializer):
         SerializerMethodField allows calling the same serializer
         on each reply, enabling infinite nesting depth.
         """
-        return CommentTreeSerializer(obj.get("replies", []), many = True).data
+        return CommentTreeSerializer(obj.get("replies", []), many=True).data
 
 
 class CommentListSerializer(serializers.ModelSerializer):
@@ -45,9 +46,10 @@ class CommentListSerializer(serializers.ModelSerializer):
     Used by GET /api/comments/ - top-level comments only.
     Embeds user identity as a nested object.
     """
-    user = UserOutputSerializer(read_only = True)
-    reply_count = serializers.IntegerField(read_only = True)
-    attachment = AttachmentSerializer(read_only = True)
+
+    user = UserOutputSerializer(read_only=True)
+    reply_count = serializers.IntegerField(read_only=True)
+    attachment = AttachmentSerializer(read_only=True)
 
     class Meta:
         model = Comment
@@ -57,7 +59,7 @@ class CommentListSerializer(serializers.ModelSerializer):
             "text",
             "created_at",
             "reply_count",
-            "attachment"
+            "attachment",
         ]
 
 
@@ -68,14 +70,15 @@ class CommentCreateSerializer(serializers.Serializer):
     because the frontend submits everything together.
     `parent_id` is optional - `None` means top-level comment.
     """
+
     # User identity fields
-    username = serializers.CharField(max_length = 50)
+    username = serializers.CharField(max_length=50)
     email = serializers.EmailField()
-    home_page = serializers.URLField(required = False, allow_null = True)
+    home_page = serializers.URLField(required=False, allow_null=True)
 
     # Comment fields
     text = serializers.CharField()
-    parent_id = serializers.UUIDField(required = False, allow_null = True)
+    parent_id = serializers.UUIDField(required=False, allow_null=True)
 
     # Captcha - required on every submission
     captcha_token = serializers.CharField()

@@ -9,8 +9,8 @@ from core.exceptions import FileTooLargeError, UnsupportedFileTypeError
 
 IMAGE_MAX_WIDTH = 320
 IMAGE_MAX_HEIGHT = 240
-IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024   # 5MB pre-resize limit
-TEXT_MAX_SIZE_BYTES = 100 * 1024         # 100KB
+IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024  # 5MB pre-resize limit
+TEXT_MAX_SIZE_BYTES = 100 * 1024  # 100KB
 
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/gif"}
 ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif"}
@@ -37,13 +37,12 @@ class ImageProcessor(AttachmentProcessorInterface):
             or ext not in ALLOWED_IMAGE_EXTENSIONS
         ):
             raise UnsupportedFileTypeError(
-                f"Unsupported image format '{ext}'. "
-                f"Allowed: JPG, PNG, GIF."
+                f"Unsupported image format '{ext}'. Allowed: JPG, PNG, GIF."
             )
         if self.file.size > IMAGE_MAX_SIZE_BYTES:
             raise FileTooLargeError(
                 f"Image exceeds maximum pre-resize size of "
-                f"{IMAGE_MAX_SIZE_BYTES // (1024*1024)}MB."
+                f"{IMAGE_MAX_SIZE_BYTES // (1024 * 1024)}MB."
             )
 
     def process(self) -> InMemoryUploadedFile:

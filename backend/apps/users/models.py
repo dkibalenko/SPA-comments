@@ -11,20 +11,13 @@ class User(models.Model):
     A single person reusing the same username/email gets the
     same record.
     """
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False
-    )
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     username = models.CharField(
-        max_length=50,
-        help_text="Letters and digits only [a-zA-z0-9]"
+        max_length=50, help_text="Letters and digits only [a-zA-z0-9]"
     )
     email = models.EmailField()
-    home_page = models.URLField(
-        blank=True,
-        null=True
-    )
+    home_page = models.URLField(blank=True, null=True)
     ip_address = models.GenericIPAddressField()  # internal ID data
     user_agent = models.TextField(blank=True, default="")  # internal ID data
     created_at = models.DateTimeField(auto_now_add=True)
@@ -32,13 +25,12 @@ class User(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["username", "email"],
-                name="unique_user_identity"
+                fields=["username", "email"], name="unique_user_identity"
             )
         ]
         indexes = [
             models.Index(fields=["email"], name="idx_users_email"),
-            models.Index(fields=["username"], name="idx_users_username")
+            models.Index(fields=["username"], name="idx_users_username"),
         ]
 
     def __str__(self) -> str:

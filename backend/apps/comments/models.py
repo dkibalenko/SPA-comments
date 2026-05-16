@@ -9,22 +9,17 @@ class Comment(models.Model):
     `parent=None` means top-level comment.
     `parent=<Comment>` means reply.
     """
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False
-    )
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(  # user_id is created for FK
-        "users.User",
-        on_delete=models.CASCADE,
-        related_name="comments"
+        "users.User", on_delete=models.CASCADE, related_name="comments"
     )
     parent = models.ForeignKey(  # parent_id is created for FK
         "self",
         null=True,
         blank=True,
         on_delete=models.CASCADE,
-        related_name="replies"
+        related_name="replies",
     )
     text = models.TextField(
         help_text="Sanitized. Allowed tags: <a>, <code>, <i>, <strong>"
@@ -36,7 +31,7 @@ class Comment(models.Model):
             models.Index(fields=["parent"], name="idx_comments_parent"),
             models.Index(
                 fields=["-created_at"], name="idx_comments_created_desc"
-            )
+            ),
         ]
         ordering = ["-created_at"]  # default LIFO
 

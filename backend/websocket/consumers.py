@@ -24,7 +24,7 @@ class CommentConsumer(AsyncWebsocketConsumer):
     async def connect(self) -> None:
         """Accept connection and join the shared comments group."""
         await self.channel_layer.group_add(
-            COMMENTS_GROUP,     # "comments" maps to a list of channel names
+            COMMENTS_GROUP,  # "comments" maps to a list of channel names
             self.channel_name,  # unique ID for this WebSocket connection
         )
         # accept the connection call
@@ -42,7 +42,7 @@ class CommentConsumer(AsyncWebsocketConsumer):
         )
 
     async def receive(
-        self, text_data: Optional[str] = None, bytes_data = None
+        self, text_data: Optional[str] = None, bytes_data=None
     ) -> None:
         """Client → server messages are ignored.
 

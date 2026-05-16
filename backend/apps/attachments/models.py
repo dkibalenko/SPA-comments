@@ -14,23 +14,13 @@ class Attachment(models.Model):
     Images are resized to max 320x240 before storage.
     Text files are capped at 100KB
     """
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False
-    )
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     comment = models.OneToOneField(
-        "comments.Comment",
-        on_delete=models.CASCADE,
-        related_name="attachment"
+        "comments.Comment", on_delete=models.CASCADE, related_name="attachment"
     )
-    file_type = models.CharField(
-        max_length=10,
-        choices=AttachmentType.choices
-    )
-    storage_path = models.FileField(
-        upload_to="attachments/%Y/%m"
-    )
+    file_type = models.CharField(max_length=10, choices=AttachmentType.choices)
+    storage_path = models.FileField(upload_to="attachments/%Y/%m")
     original_filename = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
 

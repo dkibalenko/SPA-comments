@@ -36,10 +36,11 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
     Inherits ListModelMixin    → GET  /api/comments/
     Custom action              → GET  /api/comments/{id}/tree/
     """
+
     pagination_class = CommentPagination
     filterset_class = CommentFilter
 
-    def __init__(self, service = None, attachment_service = None, **kwargs):
+    def __init__(self, service=None, attachment_service=None, **kwargs):
         super().__init__(**kwargs)
         self.service = service or CommentService()
         self.attachment_service = attachment_service or AttachmentService()
@@ -59,23 +60,23 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
 
         Accepts multipart/form-data so file + fields arrive together.
         """
-        serializer = self.get_serializer(data = request.data)
-        serializer.is_valid(raise_exception = True)  # return default HTTP 400
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)  # return default HTTP 400
         data = serializer.validated_data
 
         try:
             result = self.service.create_comment(
-                username = data["username"],
-                email = data["email"],
-                text = data["text"],
-                ip_address = request.META.get("REMOTE_ADDR", ""),
-                user_agent = request.META.get("HTTP_USER_AGENT", ""),
-                captcha_token = data["captcha_token"],
-                captcha_answer = data["captcha_answer"],
-                home_page = data.get("home_page"),
-                parent_id = str(data["parent_id"]) if data.get(
-                    "parent_id"
-                ) else None
+                username=data["username"],
+                email=data["email"],
+                text=data["text"],
+                ip_address=request.META.get("REMOTE_ADDR", ""),
+                user_agent=request.META.get("HTTP_USER_AGENT", ""),
+                captcha_token=data["captcha_token"],
+                captcha_answer=data["captcha_answer"],
+                home_page=data.get("home_page"),
+                parent_id=str(data["parent_id"])
+                if data.get("parent_id")
+                else None,
             )
         except (ValidationError, CaptchaError) as exc:
             return Response(
@@ -91,7 +92,7 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
         if uploaded_file:
             try:
                 self.attachment_service.handle_upload(
-                    comment_id = str(comment.id),  # type: ignore
+                    comment_id=str(comment.id),  # type: ignore
                     file=uploaded_file,
                 )
             except (UnsupportedFileTypeError, FileTooLargeError) as exc:
@@ -99,14 +100,14 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
                 comment.delete()  # type: ignore
                 return Response(
                     {"detail": str(exc)},
-                    status = status.HTTP_400_BAD_REQUEST,
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
 
         return Response(
             {
                 "id": str(comment.id),  # type: ignore
                 "created_at": comment.created_at,  # type: ignore
-                "token": token  # frontend stores token for next submission
+                "token": token,  # frontend stores token for next submission
             },
             status=status.HTTP_201_CREATED,
         )
@@ -120,7 +121,7 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
         # build cache key from the actual request params
         ordering = request.query_params.get("ordering", "-created_at")
         page = request.query_params.get("page", "1")
-        cache_key = make_list_cache_key(ordering = ordering, page = page)
+        cache_key = make_list_cache_key(ordering=ordering, page=page)
 
         # try cache first
         cached_response = cache.get(cache_key)
@@ -131,7 +132,9 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
         log.debug(f"Cache MISS: list ordering={ordering} page={page}")
 
         # cache miss - build response normally
-        queryset = self.filter_queryset(self.get_queryset())  # applies CommentFilter
+        queryset = self.filter_queryset(
+            self.get_queryset()
+        )  # applies CommentFilter
         page_obj = self.paginate_queryset(queryset)  # slices the DB query
 
         # for absolute URL generation in AttachmentSerializer
@@ -139,31 +142,31 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
 
         if page_obj is not None:
             serializer = CommentListSerializer(
-                page_obj, many = True, context = serializer_context
+                page_obj, many=True, context=serializer_context
             )
             # wrap the data in {count, next, previous, results}
             response_data = self.get_paginated_response(serializer.data).data
         else:
             serializer = CommentListSerializer(
-                queryset, many = True, context = serializer_context
+                queryset, many=True, context=serializer_context
             )
             response_data = serializer.data
 
         # store in cache
-        cache.set(cache_key, response_data, timeout = COMMENT_LIST_TTL)
+        cache.set(cache_key, response_data, timeout=COMMENT_LIST_TTL)
 
         return Response(response_data)
 
-    @action(detail = True, methods = ["get"], url_path = "tree")
+    @action(detail=True, methods=["get"], url_path="tree")
     def tree(self, request: Request, pk: str) -> Response:
         """Return the full nested reply tree for a single comment."""
         try:
-            tree_data = self.service.get_tree(root_id = pk)
+            tree_data = self.service.get_tree(root_id=pk)
         except NotFoundError as exc:
             return Response(
                 {"detail": str(exc)},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        serializer = CommentTreeSerializer(tree_data, many = True)
+        serializer = CommentTreeSerializer(tree_data, many=True)
         return Response(serializer.data)

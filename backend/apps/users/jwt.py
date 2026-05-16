@@ -14,6 +14,7 @@ class CommentIdentityToken(Token):
     Not an authentication token — it grants no permissions.
     It's a signed identity hint, nothing more.
     """
+
     token_type = "comment_identity"
     lifetime = timedelta(days=30)
 

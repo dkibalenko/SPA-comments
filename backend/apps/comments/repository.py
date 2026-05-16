@@ -28,11 +28,7 @@ class CommentRepository:
     def get_by_id(self, comment_id: str) -> Comment | None:
         """Fetch single comment with its user. `None` if not found."""
         try:
-            return (
-                Comment.objects
-                .select_related("user")
-                .get(id=comment_id)
-            )
+            return Comment.objects.select_related("user").get(id=comment_id)
         except Comment.DoesNotExist:
             return None
 
@@ -43,8 +39,7 @@ class CommentRepository:
         `created_at` desc.
         """
         return (
-            Comment.objects
-            .filter(parent__isnull=True)
+            Comment.objects.filter(parent__isnull=True)
             .select_related("user", "attachment")
             .annotate(
                 reply_count=Count("replies"),
@@ -116,8 +111,11 @@ class CommentRepository:
         """
         with connection.cursor() as cursor:
             cursor.execute(sql, params=[str(root_id)])  # pass param to %s
-            columns = [col[0] for col in cursor.description]  # e.g [('id', ...),] -> extract only names, [0]
+            columns = [
+                col[0] for col in cursor.description
+            ]  # e.g [('id', ...),] -> extract only names, [0]
             return [dict(zip(columns, row)) for row in cursor.fetchall()]
+
 
 # columns = [
 #     'id',

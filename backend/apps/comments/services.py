@@ -32,7 +32,7 @@ class CommentService:
         self,
         comment_repo: CommentRepository | None = None,
         user_repo: UserRepository | None = None,
-        captcha_service: CaptchaService | None = None
+        captcha_service: CaptchaService | None = None,
     ) -> None:
         self.comment_repo = comment_repo or CommentRepository()
         self.user_repo = user_repo or UserRepository()
@@ -165,7 +165,7 @@ class CommentService:
         cached = cache.get(cache_key)
         if cached is not None:
             log.debug(f"Cache HIT: tree {root_id}")
-            return cached                         # return immediately, no DB
+            return cached  # return immediately, no DB
 
         # 2. cache miss - hit PostgreSQL with recursive CTE
         log.debug(f"Cache MISS: tree {root_id}")
