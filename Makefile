@@ -1,10 +1,14 @@
-.PHONY: up-dev up-prod down logs shell migrate check test ruff ruff-format mypy
+.PHONY: up-dev up-prod down logs shell migrate check test ruff ruff-format mypy frontend-build
 
 up-dev:
 	docker compose up --build
 
 up-prod:
 	docker compose -f docker-compose.prod.yml up -d
+
+frontend-build:
+	docker compose -f docker-compose.prod.yml build frontend && \
+	docker compose -f docker-compose.prod.yml run --rm frontend
 
 down:
 	docker compose down
