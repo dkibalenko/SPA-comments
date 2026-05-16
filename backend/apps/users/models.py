@@ -5,7 +5,7 @@ from django.db import models
 
 class User(models.Model):
     """Represents the identity of a commenter.
-    
+
     Not an auth user - no password, no login.
     Identity is established by username + email.
     A single person reusing the same username/email gets the

@@ -5,7 +5,7 @@ from django.db import models
 
 class Comment(models.Model):
     """Supports infinite nesting via self-referential FK.
-    
+
     `parent=None` means top-level comment.
     `parent=<Comment>` means reply.
     """

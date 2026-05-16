@@ -2,9 +2,9 @@ import re
 
 from rest_framework import serializers
 
+from apps.attachments.serializers import AttachmentSerializer
 from apps.comments.models import Comment
 from apps.users.serializers import UserOutputSerializer
-from apps.attachments.serializers import AttachmentSerializer
 
 
 class CommentTreeSerializer(serializers.Serializer):

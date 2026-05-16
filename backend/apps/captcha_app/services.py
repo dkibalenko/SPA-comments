@@ -10,7 +10,6 @@ from django.core.cache import cache
 
 from core.exceptions import CaptchaError
 
-
 CAPTCHA_LENGTH = 6
 CAPTCHA_TTL = 300
 CAPTCHA_KEY_PREFIX = "captcha:"

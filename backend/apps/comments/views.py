@@ -1,12 +1,12 @@
 import logging
 
+from django.core.cache import cache
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.mixins import CreateModelMixin, ListModelMixin
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
-from django.core.cache import cache
 
 from apps.attachments.services import AttachmentService
 from apps.comments.filters import CommentFilter
@@ -16,16 +16,15 @@ from apps.comments.serializers import (
     CommentTreeSerializer,
 )
 from apps.comments.services import CommentService
+from core.cache import COMMENT_LIST_TTL, make_list_cache_key
 from core.exceptions import (
-    NotFoundError,
-    ValidationError,
     CaptchaError,
     FileTooLargeError,
-    UnsupportedFileTypeError
+    NotFoundError,
+    UnsupportedFileTypeError,
+    ValidationError,
 )
 from core.pagination import CommentPagination
-from core.cache import COMMENT_LIST_TTL, make_list_cache_key
-
 
 log = logging.getLogger(__name__)
 
@@ -35,7 +34,7 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
 
     Inherits CreateModelMixin  → POST /api/comments/
     Inherits ListModelMixin    → GET  /api/comments/
-    Custom action              → GET  /api/comments/{id}/tree/ 
+    Custom action              → GET  /api/comments/{id}/tree/
     """
     pagination_class = CommentPagination
     filterset_class = CommentFilter
@@ -83,7 +82,7 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
                 {"detail": str(exc)},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
+
         comment = result["comment"]
         token = result["token"]
 
@@ -92,12 +91,12 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
         if uploaded_file:
             try:
                 self.attachment_service.handle_upload(
-                    comment_id = str(comment.id),
+                    comment_id = str(comment.id),  # type: ignore
                     file=uploaded_file,
                 )
             except (UnsupportedFileTypeError, FileTooLargeError) as exc:
                 # rollback to keep atomicity
-                comment.delete()
+                comment.delete()  # type: ignore
                 return Response(
                     {"detail": str(exc)},
                     status = status.HTTP_400_BAD_REQUEST,
@@ -105,8 +104,8 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
 
         return Response(
             {
-                "id": str(comment.id),
-                "created_at": comment.created_at,
+                "id": str(comment.id),  # type: ignore
+                "created_at": comment.created_at,  # type: ignore
                 "token": token  # frontend stores token for next submission
             },
             status=status.HTTP_201_CREATED,
@@ -115,7 +114,7 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
     def list(self, request: Request, *args, **kwargs) -> Response:
         """Paginated sortable list - served from cache when available.
 
-        Cache key encodes ordering + page, so each unique combination 
+        Cache key encodes ordering + page, so each unique combination
         gets its own cache entry.
         """
         # build cache key from the actual request params
@@ -156,7 +155,7 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
         return Response(response_data)
 
     @action(detail = True, methods = ["get"], url_path = "tree")
-    def tree(self, request: Request, pk: str = None) -> Response:
+    def tree(self, request: Request, pk: str) -> Response:
         """Return the full nested reply tree for a single comment."""
         try:
             tree_data = self.service.get_tree(root_id = pk)

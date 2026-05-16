@@ -1,7 +1,7 @@
 from django.core.files.uploadedfile import InMemoryUploadedFile
 
-from apps.attachments.strategy import AttachmentStrategy
 from apps.attachments.models import Attachment, AttachmentType
+from apps.attachments.strategy import AttachmentStrategy
 
 
 class AttachmentService:
@@ -47,7 +47,7 @@ class AttachmentService:
         return attachment
 
     @staticmethod
-    def _resolve_type(content_type: str) -> str:
+    def _resolve_type(content_type: str) -> tuple[str, str]:
         """Determine attachment type based on MIME content type."""
         if content_type.startswith("image/"):
             return AttachmentType.IMAGE

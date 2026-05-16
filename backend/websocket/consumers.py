@@ -1,5 +1,6 @@
 import json
 import logging
+from typing import Optional
 
 from channels.generic.websocket import AsyncWebsocketConsumer
 
@@ -40,7 +41,9 @@ class CommentConsumer(AsyncWebsocketConsumer):
             f"WS disconnected: channel={self.channel_name} code={close_code}"
         )
 
-    async def receive(self, text_data: str = None, bytes_data=None) -> None:
+    async def receive(
+        self, text_data: Optional[str] = None, bytes_data = None
+    ) -> None:
         """Client → server messages are ignored.
 
         This is a server-push only channel.

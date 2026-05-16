@@ -7,17 +7,16 @@ from apps.captcha_app.services import CaptchaService
 from apps.comments.models import Comment
 from apps.comments.repository import CommentRepository
 from apps.comments.signals import comment_created
-from apps.users.repository import UserRepository
 from apps.users.jwt import issue_identity_token
-from core.exceptions import NotFoundError, ValidationError
-from core.validators import sanitize_comment_text
+from apps.users.repository import UserRepository
 from core.cache import (
     COMMENT_TREE_TTL,
     invalidate_list_cache,
     invalidate_tree_cache,
     make_tree_cache_key,
 )
-
+from core.exceptions import NotFoundError, ValidationError
+from core.validators import sanitize_comment_text
 
 log = logging.getLogger(__name__)
 
@@ -50,7 +49,7 @@ class CommentService:
         captcha_answer: str,
         home_page: str | None = None,
         parent_id: str | None = None,
-    ) -> dict[Comment, str]:
+    ) -> dict[str, Comment | str]:
         """Create a comment and return it with an identity token for the user.
 
         Steps:
@@ -101,7 +100,7 @@ class CommentService:
         )
 
         # 6. reload with user relation for the signal payload
-        comment = self.comment_repo.get_by_id(comment.id)
+        comment = self.comment_repo.get_by_id(comment.id)  # type: ignore
 
         # 7. cache invalidation
         if parent_id:

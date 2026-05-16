@@ -4,9 +4,8 @@ from celery import shared_task
 
 from apps.notifications.emails import (
     ReplyNotificationData,
-    send_reply_notification
+    send_reply_notification,
 )
-
 
 log = logging.getLogger(__name__)
 

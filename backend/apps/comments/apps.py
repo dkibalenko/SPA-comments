@@ -9,8 +9,8 @@ class CommentsConfig(AppConfig):
         """Connect signal handlers when the app is fully loaded."""
         # import here to avoid AppRegistryNotReady - errors that occur when
         # signals are imported before models are loaded
-        from apps.comments.signals import comment_created
         from apps.comments.handlers import on_comment_created
+        from apps.comments.signals import comment_created
 
         comment_created.connect(
             on_comment_created,

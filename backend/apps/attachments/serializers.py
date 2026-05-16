@@ -1,4 +1,5 @@
 from rest_framework import serializers
+
 from apps.attachments.models import Attachment
 
 
@@ -17,7 +18,7 @@ class AttachmentSerializer(serializers.ModelSerializer):
         and every field at any depth automatically sees the same context.
 
         When `AttachmentSerializer.get_url` calls `self.context`, it:
-        
+
         1. calls `self.root` — walks parent pointers up the chain until it
         finds the serializer with no parent
         2. that root is `CommentListSerializer`, the parent of
@@ -28,7 +29,7 @@ class AttachmentSerializer(serializers.ModelSerializer):
         The serializer itself has no idea what host it's running on.
         `request.build_absolute_uri()` is the only thing that knows the scheme
         (http vs https), the host, and the port at the time of
-        the actual request. 
+        the actual request.
         """
         request = self.context.get("request")
         if request:

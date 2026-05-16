@@ -4,7 +4,6 @@ import bleach
 
 from core.exceptions import ValidationError
 
-
 ALLOWED_TAGS: list[str] = ["a", "code", "i", "strong"]
 ALLOWED_ATTRIBUTES: dict[str, list[str]] = {"a": ["href", "title"]}
 USERNAME_RE = re.compile(r"^[a-zA-Z0-9]+$")
@@ -14,11 +13,11 @@ CLOSING_TAG_RE = re.compile(r"</(?P<tag>[a-zA-Z]+)>")
 
 def sanitize_comment_text(text: str) -> str:
     """Strip disallowed HTML tags and validate XHTML tag closure.
-    
+
     Pipeline:
         1. bleach strips everything outside `ALLOWED_TAGS`
         2. `validate_xhtml_closure` checks all remaining tags are closed
-    
+
     :param text: Raw user input.
     :returns: Sanitized, XHTML-valid string safe for storage and display.
     :raises ValidationError: If remaining tags are not properly closed.
@@ -36,10 +35,10 @@ def sanitize_comment_text(text: str) -> str:
 
 def _validate_xhtml_closure(text: str) -> None:
     """Verify every opening tag has a matching closing tag.
-    
+
     Uses a stack to track nesting. Raises if any tag is unclosed
     or closed in the wrong order.
-    
+
     :raises ValidationError: If tags are unclosed or misnested.
     """
     opening_tags = OPENING_TAG_RE.findall(text)
@@ -77,7 +76,7 @@ def _validate_xhtml_closure(text: str) -> None:
 
 def validate_username(value: str) -> str:
     """Ensure username contains only [a-zA-Z0-9].
-    
+
     :raises ValidationError: If the value contains invalid characters.
     """
     if not USERNAME_RE.match(value):

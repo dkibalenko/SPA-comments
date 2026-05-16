@@ -4,9 +4,8 @@ from io import BytesIO
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from PIL import Image
 
-from core.exceptions import FileTooLargeError, UnsupportedFileTypeError
 from apps.attachments.interfaces import AttachmentProcessorInterface
-
+from core.exceptions import FileTooLargeError, UnsupportedFileTypeError
 
 IMAGE_MAX_WIDTH = 320
 IMAGE_MAX_HEIGHT = 240
@@ -63,7 +62,9 @@ class ImageProcessor(AttachmentProcessorInterface):
             return self.file
 
         # resize proportionally, never upscale
-        image.thumbnail((IMAGE_MAX_WIDTH, IMAGE_MAX_HEIGHT), Image.LANCZOS)
+        image.thumbnail(
+            (IMAGE_MAX_WIDTH, IMAGE_MAX_HEIGHT), Image.Resampling.LANCZOS
+        )
 
         # save resized image to in-memory buffer
         output = BytesIO()

@@ -1,9 +1,8 @@
 import logging
 from dataclasses import dataclass
 
-from django.core.mail import send_mail
 from django.conf import settings
-
+from django.core.mail import send_mail
 
 log = logging.getLogger(__name__)
 
@@ -24,7 +23,7 @@ def send_reply_notification(data: ReplyNotificationData) -> None:
 
     :param data: ReplyNotificationData value object.
     """
-    subject = f"Someone replied to your comment"
+    subject = "Someone replied to your comment"
 
     message = (
         f"Hi {data.recipient_username},\n\n"

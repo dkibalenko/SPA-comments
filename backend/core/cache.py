@@ -23,7 +23,7 @@ def make_tree_cache_key(root_id: str) -> str:
 
 def invalidate_list_cache() -> None:
     """Delete all comment list cache entries.
-    
+
     Called when a new top-level comment is created.
     Uses pattern-based deletion via django-redis.
     """
@@ -38,7 +38,7 @@ def invalidate_list_cache() -> None:
 
 def invalidate_tree_cache(root_id: str) -> None:
     """Delete a specific tree cache entry.
-    
+
     Called when a reply is added to a thread.
     """
     cache.delete(make_tree_cache_key(root_id))

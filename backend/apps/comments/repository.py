@@ -7,7 +7,7 @@ from apps.comments.models import Comment
 
 class CommentRepository:
     """All database operations for Comments.
-    
+
     Top-level list uses Django ORM (clean, readable, filterable).
     Tree fetch uses raw recursive CTE (necessary for arbitrary depth).
     """
