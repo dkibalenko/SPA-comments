@@ -1,7 +1,10 @@
-.PHONY: up down build logs shell migrate test
+.PHONY: up-dev up-prod down logs shell migrate check test ruff ruff-format mypy
 
-up:
+up-dev:
 	docker compose up --build
+
+up-prod:
+	docker compose -f docker-compose.prod.yml up -d
 
 down:
 	docker compose down
@@ -23,3 +26,12 @@ test:
 		--cov=. \
 		--cov-report=term-missing \
 		--cov-report=xml:coverage.xml
+
+ruff:
+	cd backend/ && poetry run ruff check .
+
+ruff-format:
+	cd backend/ && poetry run ruff format --check .
+
+mypy:
+	cd backend/ && poetry run mypy .
