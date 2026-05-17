@@ -1,12 +1,8 @@
 services:
-
   db:
     image: postgres:16-alpine
     restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    env_file: .env.prod
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -46,10 +42,7 @@ services:
           memory: 128M
 
   backend:
-    image: ${BACKEND_IMAGE:-spa-backend:latest}
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: ghcr.io/dkibalenko/spa-backend:latest
     restart: unless-stopped
     command: daphne -b 0.0.0.0 -p 8000 config.asgi:application
     volumes:
@@ -57,13 +50,8 @@ services:
       - static_data:/app/staticfiles
     networks:
       - comments_network
+      - meizuno
     env_file: .env.prod
-    environment:
-      DJANGO_SETTINGS_MODULE: config.settings.production
-      POSTGRES_HOST: db
-      REDIS_CACHE_URL: redis://redis:6379/1
-      REDIS_CHANNELS_URL: redis://redis:6379/2
-      REDIS_CELERY_URL: redis://redis:6379/3
     depends_on:
       db:
         condition: service_healthy
@@ -76,7 +64,7 @@ services:
           memory: 384M
 
   celery:
-    image: ${BACKEND_IMAGE:-spa-backend:latest}
+    image: ghcr.io/dkibalenko/spa-backend:latest
     restart: unless-stopped
     command: celery -A config.celery_app worker --loglevel=info --concurrency=1
     env_file: .env.prod
@@ -101,10 +89,7 @@ services:
           memory: 256M
 
   frontend:  # short-lived - a one-shot file transfer, not a running server
-    image: ${FRONTEND_IMAGE:-spa-frontend:latest}
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    image: ghcr.io/dkibalenko/spa-frontend:latest
     volumes:
       - frontend_dist:/app/frontend
     networks:
@@ -114,8 +99,6 @@ services:
   nginx:
     image: nginx:alpine
     restart: unless-stopped
-    ports:
-      - "8080:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - static_data:/app/staticfiles:ro
@@ -123,6 +106,7 @@ services:
       - frontend_dist:/app/frontend:ro
     networks:
       - comments_network
+      - meizuno
     depends_on:
       backend:
         condition: service_started
@@ -143,3 +127,5 @@ volumes:
 networks:
   comments_network:
     driver: bridge
+  meizuno:
+    external: true
