@@ -1,7 +1,7 @@
 import { onUnmounted } from 'vue'
 
 export function useWebSocket(onMessage) {
-  const ws = new WebSocket(`ws://${location.host}/ws/comments/`)
+  const ws = new WebSocket(`wss://${location.host}/ws/comments/`)
 
   ws.onmessage = (event) => {
     const data = JSON.parse(event.data)
