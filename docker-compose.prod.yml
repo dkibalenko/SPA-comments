@@ -46,6 +46,7 @@ services:
           memory: 128M
 
   backend:
+    image: ${BACKEND_IMAGE:-spa-backend:latest}
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -75,9 +76,7 @@ services:
           memory: 384M
 
   celery:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: ${BACKEND_IMAGE:-spa-backend:latest}
     restart: unless-stopped
     command: celery -A config.celery_app worker --loglevel=info --concurrency=1
     env_file: .env.prod
@@ -102,6 +101,7 @@ services:
           memory: 256M
 
   frontend:  # short-lived - a one-shot file transfer, not a running server
+    image: ${FRONTEND_IMAGE:-spa-frontend:latest}
     build:
       context: ./frontend
       dockerfile: Dockerfile
