@@ -1,3 +1,6 @@
+### Local overrides ###
+docker-compose.override.yml
+
 ### Django ###
 *.log
 *.pot
