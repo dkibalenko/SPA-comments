@@ -11,7 +11,7 @@ from core.validators import (
 # sanitize_comment_text
 
 class TestSanitizeCommentText:
-    """Tests for the full sanitization pipeline: bleach clean → XHTML check."""
+    """Tests for the full sanitization pipeline: XHTML check → bleach clean."""
 
     @pytest.mark.parametrize(
         "raw, expected", 
@@ -60,17 +60,15 @@ class TestSanitizeCommentText:
         raw = "<strong>a</strong><i>b</i>"
         assert sanitize_comment_text(raw) == "<strong>a</strong><i>b</i>"
 
-    def test_bleach_auto_closes_unclosed_allowed_tag(self):
-        # bleach's html5lib parser normalizes malformed HTML before
-        # _validate_xhtml_closure runs — unclosed tags are auto-closed.
-        result = sanitize_comment_text("<strong>unclosed")
-        assert result == "<strong>unclosed</strong>"
+    def test_unclosed_allowed_tag_rejected(self):
+        # validation runs before bleach, so unclosed allowed tags are caught
+        with pytest.raises(ValidationError):
+            sanitize_comment_text("<strong>unclosed")
 
-    def test_bleach_fixes_misnested_allowed_tags(self):
-        # html5lib re-orders misnested tags to produce valid HTML,
-        # so _validate_xhtml_closure never sees the bad input.
-        result = sanitize_comment_text("<strong><i>text</strong></i>")
-        assert result == "<strong><i>text</i></strong>"
+    def test_misnested_allowed_tags_rejected(self):
+        # validation runs before bleach, so misnested allowed tags are caught
+        with pytest.raises(ValidationError):
+            sanitize_comment_text("<strong><i>text</strong></i>")
 
     def test_html_comment_stripped(self):
         result = sanitize_comment_text("<!-- secret -->visible")
@@ -114,7 +112,7 @@ class TestValidateXhtmlClosure:
             _validate_xhtml_closure(text)
 
     def test_unclosed_error_message(self):
-        with pytest.raises(ValidationError, match = "unclosed"):
+        with pytest.raises(ValidationError, match="Unclosed"):
             _validate_xhtml_closure("<strong>no closing tag")
 
     def test_misnested_error_message(self):
@@ -122,9 +120,9 @@ class TestValidateXhtmlClosure:
             _validate_xhtml_closure("<strong><i>text</strong></i>")
 
     def test_unclosed_inner_tag_error_message(self):
-        # outer closed correctly, but inner <i> is not
-        with pytest.raises(ValidationError, match = "unclosed"):
-            _validate_xhtml_closure("<strong><i>text</strong>")
+        # inner <code> is closed, outer <i> is left open → "Unclosed" path
+        with pytest.raises(ValidationError, match="Unclosed"):
+            _validate_xhtml_closure("<i>text <code>snippet</code>")
 
 
 # validate_username
