@@ -15,47 +15,40 @@ def sanitize_comment_text(text: str) -> str:
     """Strip disallowed HTML tags and validate XHTML tag closure.
 
     Pipeline:
-        1. bleach strips everything outside `ALLOWED_TAGS`
-        2. `validate_xhtml_closure` checks all remaining tags are closed
+        1. `_validate_xhtml_closure` checks allowed tags are closed in raw input
+           (before bleach, which would auto-close unclosed tags and hide the error)
+        2. bleach strips everything outside `ALLOWED_TAGS`
 
     :param text: Raw user input.
     :returns: Sanitized, XHTML-valid string safe for storage and display.
     :raises ValidationError: If remaining tags are not properly closed.
     """
-    cleaned = bleach.clean(
+    _validate_xhtml_closure(text, only_tags=ALLOWED_TAGS)
+    return bleach.clean(
         text,
         tags=ALLOWED_TAGS,
         attributes=ALLOWED_ATTRIBUTES,
         strip=True,
         strip_comments=True,
     )
-    _validate_xhtml_closure(cleaned)
-    return cleaned
 
 
-def _validate_xhtml_closure(text: str) -> None:
+def _validate_xhtml_closure(text: str, only_tags: list[str] | None = None) -> None:
     """Verify every opening tag has a matching closing tag.
 
-    Uses a stack to track nesting. Raises if any tag is unclosed
-    or closed in the wrong order.
+    Uses a stack to track nesting. When `only_tags` is given, skips any tag
+    not in that set - this allows to validate raw input before bleach strips
+    disallowed tags, without raising on tags bleach will remove anyway.
 
     :raises ValidationError: If tags are unclosed or misnested.
     """
-    opening_tags = OPENING_TAG_RE.findall(text)
-    closing_tags = CLOSING_TAG_RE.findall(text)
-
-    if len(opening_tags) != len(closing_tags):
-        raise ValidationError(
-            "Comment contains unclosed HTML tags. "
-            "All tags must be properly closed."
-        )
-
-    stack: list[str] = []
     # e.g. input: <p><strong>Hello</strong></p> =>
     # [('', 'p'), ('', 'strong'), ('/', 'strong'), ('/', 'p')]
     tokens = re.findall(r"<(/?)([a-zA-Z]+)[^>]*>", text)
+    if only_tags:
+        tokens = [(c, t) for c, t in tokens if t.lower() in only_tags]
 
-    # check if all tags match
+    stack: list[str] = []
     for is_closing, tag in tokens:
         tag = tag.lower()
         if not is_closing:
@@ -68,7 +61,7 @@ def _validate_xhtml_closure(text: str) -> None:
                 )
             stack.pop()
 
-    if stack:  # pragma: no cover
+    if stack:
         raise ValidationError(
             f"Unclosed tag(s): {', '.join(f'<{t}>' for t in stack)}."
         )
