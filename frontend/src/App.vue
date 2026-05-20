@@ -25,7 +25,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, provide } from 'vue'
 import CommentForm from './components/CommentForm.vue'
 import CommentList from './components/CommentList.vue'
 import api from './api/client.js'
@@ -35,6 +35,9 @@ const comments = ref([])
 const total = ref(0)
 const page = ref(1)
 const ordering = ref('-date')
+const treeRefreshKey = ref(0)
+
+provide('treeRefreshKey', treeRefreshKey)
 
 async function loadComments() {
   const res = await api.getComments({
@@ -48,6 +51,7 @@ async function loadComments() {
 function onCommentSubmitted() {
   page.value = 1
   loadComments()
+  treeRefreshKey.value++
 }
 
 const replyToId = ref(null)
@@ -70,11 +74,13 @@ function changeSort(field) {
   loadComments()
 }
 
-// WebSocket — adds new top-level comments in real time
+// WebSocket — live updates for new comments and replies
 useWebSocket((data) => {
   if (!data.parent_id) {
-    // New top-level comment — reload the list
     loadComments()
+  } else {
+    loadComments()        // refreshes reply_count on top-level items
+    treeRefreshKey.value++ // tells open reply trees to re-fetch
   }
 })
 

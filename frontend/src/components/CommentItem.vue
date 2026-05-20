@@ -52,7 +52,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, inject, watch } from 'vue'
 import LightboxViewer from './LightboxViewer.vue'
 import api from '../api/client.js'
 
@@ -83,14 +83,34 @@ onMounted(() => {
 })
 
 async function toggleReplies() {
-  if (!loaded.value && replyCount.value > 0) {
-    // List-level item — fetch tree from API
-    const res = await api.getCommentTree(props.comment.id)
-    replies.value = res.data[0]?.replies ?? []
-    loaded.value = true
+  if (!showReplies.value) {
+    if (props.depth === 0 && replyCount.value > 0) {
+      // Root items own the tree fetch — CTE returns all descendants
+      const res = await api.getCommentTree(props.comment.id)
+      replies.value = res.data[0]?.replies ?? []
+      loaded.value = true
+    }
+    // Nested items: replies come from props.comment.replies kept in sync below
   }
   showReplies.value = !showReplies.value
 }
+
+// Nested items' replies come from the root's tree fetch embedded in props.
+// This watch fires whenever the parent re-fetches and passes new prop data down.
+watch(() => props.comment.replies, (newReplies) => {
+  if (props.depth > 0) {
+    replies.value = newReplies ?? []
+  }
+})
+
+// Root items re-fetch their tree when any reply is posted anywhere.
+const treeRefreshKey = inject('treeRefreshKey', ref(0))
+watch(treeRefreshKey, async () => {
+  if (loaded.value && props.depth === 0) {
+    const res = await api.getCommentTree(props.comment.id)
+    replies.value = res.data[0]?.replies ?? []
+  }
+})
 
 function formatDate(iso) {
   if (!iso) return ''
