@@ -33,7 +33,9 @@ def sanitize_comment_text(text: str) -> str:
     )
 
 
-def _validate_xhtml_closure(text: str, only_tags: list[str] | None = None) -> None:
+def _validate_xhtml_closure(
+    text: str, only_tags: list[str] | None = None
+) -> None:
     """Verify every opening tag has a matching closing tag.
 
     Uses a stack to track nesting. When `only_tags` is given, skips any tag
