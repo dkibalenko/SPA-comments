@@ -54,7 +54,7 @@ Browser
 View (CommentViewSet.create)
   └─ CommentService.create_comment()
         1. CaptchaService.validate()         — verify token + answer
-        2. sanitize_comment_text()           — bleach strip disallowed tags
+        2. sanitize_comment_text()           — bleach strip disallowed tags + ensure opening tag has a matching closing tag
         3. CommentRepository.get_by_id()     — validate parent exists
         4. UserRepository.get_or_create()    — resolve commenter identity
         5. CommentRepository.create()        — INSERT comment row
