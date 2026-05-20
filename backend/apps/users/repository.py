@@ -25,7 +25,7 @@ class UserRepository:
         user, created = User.objects.get_or_create(
             username=username,
             email=email,
-            defaults={  # only used when create, not lookup
+            defaults={
                 "home_page": home_page,
                 "ip_address": ip_address,
                 "user_agent": user_agent,

@@ -43,7 +43,6 @@ class CommentRepository:
             .select_related("user", "attachment")
             .annotate(
                 reply_count=Count("replies"),
-                # LOWER(users_user.username) in SELECT
                 username_lower=Lower("user__username"),
             )
             .order_by("-created_at")
@@ -110,48 +109,8 @@ class CommentRepository:
             SELECT * FROM comment_tree ORDER BY path;
         """
         with connection.cursor() as cursor:
-            cursor.execute(sql, params=[str(root_id)])  # pass param to %s
+            cursor.execute(sql, params=[str(root_id)])
             columns = [
                 col[0] for col in cursor.description
-            ]  # e.g [('id', ...),] -> extract only names, [0]
+            ]
             return [dict(zip(columns, row)) for row in cursor.fetchall()]
-
-
-# columns = [
-#     'id',
-#     'parent_id',
-#     'text',
-#     'created_at',
-#     'username',
-#     'email',
-#     'home_page',
-#     'depth',
-#     'path'
-# ]
-# cursor.fetchall() ->
-# [
-#     (
-#         'root-id',
-#         None,
-#         'Root comment text',
-#         datetime(...),
-#         'alice',
-#         'alice@example.com',
-#         'https://alice.com',
-#         0,
-#         ['root-id']
-#     ),
-#     ...
-# ]
-# dict(zip(..)) ->
-# [{
-#     'id': 'root-id',
-#     'parent_id': None,
-#     'text': 'Root comment text',
-#     'created_at': datetime(...),
-#     'username': 'alice',
-#     'email': 'alice@example.com',
-#     'home_page': 'https://alice.com',
-#     'depth': 0,
-#     'path': ['root-id']
-# },]

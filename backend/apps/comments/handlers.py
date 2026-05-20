@@ -8,8 +8,6 @@ from apps.notifications.tasks import notify_reply_author
 
 log = logging.getLogger(__name__)
 
-# All clients subscribe to this single group.
-# Every new comment broadcasts to everyone connected.
 COMMENTS_GROUP = "comments"
 
 
@@ -24,8 +22,7 @@ def on_comment_created(sender, comment: Comment, **kwargs) -> None:
     :param sender: The class that fired the signal (CommentService).
     :param comment: The freshly persisted Comment instance.
     """
-    # ---WS broadcast-----
-    # should send high-level events over the channel layer
+    # -----WS broadcast-----
     channel_layer = get_channel_layer()
 
     if channel_layer is None:
@@ -36,7 +33,7 @@ def on_comment_created(sender, comment: Comment, **kwargs) -> None:
 
     # prepare WS payload
     payload = {
-        "type": "comment.broadcast",  # maps to consumer method name
+        "type": "comment.broadcast",
         "id": str(comment.id),
         "text": comment.text,
         "created_at": comment.created_at.isoformat(),
@@ -47,19 +44,14 @@ def on_comment_created(sender, comment: Comment, **kwargs) -> None:
     }
 
     try:
-        # channel layer broadcasts to group
-        # Redis queues message for all connected WS consumers in that group
-        # standard Channels-provided bridge and is safe to use in signal handlers
         async_to_sync(channel_layer.group_send)(COMMENTS_GROUP, payload)
         log.debug(
             f"Broadcasted comment {comment.id} to group '{COMMENTS_GROUP}'"
         )
     except Exception as exc:
-        # Never let WS broadcast failure break the HTTP response
         log.error(f"WebSocket broadcast failed: {exc}", exc_info=True)
 
     # ----Celery notification task-----
-    # Only fire for replies - top-level comments have no parent to notify
     if comment.parent_id:
         try:
             notify_reply_author.delay(str(comment.id))

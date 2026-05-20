@@ -13,7 +13,7 @@ log = logging.getLogger(__name__)
 @shared_task(
     bind=True,
     max_retries=3,
-    default_retry_delay=60,  # retry after 60 seconds
+    default_retry_delay=60,
     name="notifications.notify_reply_author",
 )
 def notify_reply_author(self, comment_id: str) -> None:
@@ -31,10 +31,8 @@ def notify_reply_author(self, comment_id: str) -> None:
     log.info(f"notify_reply_author: processing comment_id={comment_id}")
 
     try:
-        # avoid circular imports at module load time
         from apps.comments.models import Comment
 
-        # fetch the reply with its parent and both users in one query
         reply = Comment.objects.select_related("user", "parent__user").get(
             id=comment_id
         )
@@ -47,7 +45,6 @@ def notify_reply_author(self, comment_id: str) -> None:
 
         parent = reply.parent
 
-        # don't notify if the author is replying to themselves
         if parent.user_id == reply.user_id:
             log.debug(
                 f"Self-reply by user {reply.user_id} - skipping notification"
@@ -67,5 +64,5 @@ def notify_reply_author(self, comment_id: str) -> None:
 
     except Exception as exc:
         log.error(f"notify_reply_author failed: {exc}", exc_info=True)
-        # Celery retry - raise retry not return
+        # Celery retry
         raise self.retry(exc=exc)

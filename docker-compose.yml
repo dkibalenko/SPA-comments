@@ -37,14 +37,14 @@ services:
     command: daphne -b 0.0.0.0 -p 8000 config.asgi:application
     volumes:
       - ./backend:/app
-      - ./media:/app/media        # ← bind mount, host controls permissions
+      - ./media:/app/media
       - static_data:/app/staticfiles
     ports:
-      - "8000:8000"                       # direct access during dev
+      - "8000:8000"
     env_file: .env
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.development
-      POSTGRES_HOST: db                   # override localhost → service name
+      POSTGRES_HOST: db
       REDIS_CACHE_URL: redis://redis:6379/1
       REDIS_CHANNELS_URL: redis://redis:6379/2
       REDIS_CELERY_URL: redis://redis:6379/3
@@ -103,7 +103,7 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - static_data:/app/staticfiles:ro
-      - ./media:/app/media  # ← same bind mount, read-only for nginx
+      - ./media:/app/media
     depends_on:
       - backend
 

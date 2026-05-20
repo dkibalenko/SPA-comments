@@ -24,10 +24,9 @@ class CommentConsumer(AsyncWebsocketConsumer):
     async def connect(self) -> None:
         """Accept connection and join the shared comments group."""
         await self.channel_layer.group_add(
-            COMMENTS_GROUP,  # "comments" maps to a list of channel names
-            self.channel_name,  # unique ID for this WebSocket connection
+            COMMENTS_GROUP,
+            self.channel_name,
         )
-        # accept the connection call
         await self.accept()
         log.debug(f"WS connected: channel={self.channel_name}")
 
@@ -59,9 +58,7 @@ class CommentConsumer(AsyncWebsocketConsumer):
         :param event: The payload dict sent by `on_comment_created` handler.
         :return: `None`. Sends JSON to client but does not return data to caller.
         """
-        # remove the type key - client doesn't need Channels internals
         payload = {k: v for k, v in event.items() if k != "type"}
 
-        # send JSON to the client. every connected client receives new comment
         await self.send(text_data=json.dumps(payload))
         log.debug(f"Pushed comment {payload.get('id')} to {self.channel_name}")

@@ -67,15 +67,12 @@ class CommentService:
         :returns: Dict containing the created comment and an identity token
             for the user.
         """
-        # 1. CAPTCHA first
         self.captcha_service.validate(captcha_token, captcha_answer)
 
-        # 2. sanitize text
         clean_text = sanitize_comment_text(text)
         if not clean_text.strip():
             raise ValidationError("Comment text cannot be empty.")
 
-        # 3. validate parent
         if parent_id:
             parent = self.comment_repo.get_by_id(parent_id)
             if not parent:
@@ -83,7 +80,6 @@ class CommentService:
                     f"Parent comment {parent_id} does not exist."
                 )
 
-        # 4. resolve user identity
         user, _ = self.user_repo.get_or_create_by_identity(
             username=username,
             email=email,
@@ -92,19 +88,15 @@ class CommentService:
             home_page=home_page,
         )
 
-        # 5. persist
         comment = self.comment_repo.create(
             user_id=user.id,
             text=clean_text,
             parent_id=parent_id,
         )
 
-        # 6. reload with user relation for the signal payload
         comment = self.comment_repo.get_by_id(comment.id)  # type: ignore
 
-        # 7. cache invalidation
         if parent_id:
-            # reply: tree cache for this thread+list cache(reply_count changes)
             root_id = self._find_root_id(parent_id)
             invalidate_tree_cache(root_id)
             invalidate_list_cache()
@@ -112,16 +104,13 @@ class CommentService:
                 f"Invalidated tree cache for root {root_id} and list cache"
             )
         else:
-            # new top-level: invalidate all list pages
             invalidate_list_cache()
             log.debug("Invalidated list cache")
 
-        # 8. fire signal (WS broadcast + Celery) ONLY after DB commit succeeds
         token = issue_identity_token(user)
         comment_ref = comment
 
         transaction.on_commit(
-            # if current transaction is rolled back, `func` will not be called
             lambda: comment_created.send(
                 sender=self.__class__,
                 comment=comment_ref,
@@ -150,9 +139,9 @@ class CommentService:
             comment = self.comment_repo.get_by_id(current_id)
 
             if not comment or not comment.parent_id:
-                return current_id  # found the root(or broken chain)
+                return current_id
 
-            current_id = str(comment.parent_id)  # move up one level
+            current_id = str(comment.parent_id)
 
     def get_tree(self, root_id: str) -> list[dict]:
         """Fetch full thread and build nested structure.
@@ -162,25 +151,21 @@ class CommentService:
         :raises NotFoundError: If `root_id` doesn't exist.
         :returns: Nested list of dicts representing the comment tree.
         """
-        cache_key = make_tree_cache_key(root_id)  # "comments:tree:uuid-A"
+        cache_key = make_tree_cache_key(root_id)
 
-        # 1. check Redis
         cached = cache.get(cache_key)
         if cached is not None:
             log.debug(f"Cache HIT: tree {root_id}")
-            return cached  # return immediately, no DB
+            return cached
 
-        # 2. cache miss - hit PostgreSQL with recursive CTE
         log.debug(f"Cache MISS: tree {root_id}")
         flat_rows = self.comment_repo.get_tree(root_id)
 
         if not flat_rows:
             raise NotFoundError(f"Comment {root_id} not found.")
 
-        # 3. build nested structure
         tree = self._build_tree(flat_rows)
 
-        # 4. store in Redis for next request
         cache.set(cache_key, tree, timeout=COMMENT_TREE_TTL)
         return tree
 
@@ -213,7 +198,7 @@ class CommentService:
             else:
                 parent = nodes.get(str(row["parent_id"]))
                 if parent:
-                    # orphan is never appended anywhere - it disappears
+                    # orphan is never appended anywhere
                     parent["replies"].append(node)
 
         return roots

@@ -39,7 +39,6 @@ class CaptchaService:
         token = str(uuid.uuid4())
         cache_key = f"{CAPTCHA_KEY_PREFIX}{token}"
 
-        # store lowercased answer - validation is case-insensitive
         cache.set(cache_key, answer.lower(), timeout=CAPTCHA_TTL)
 
         image_b64 = self._render_image(answer)
@@ -47,7 +46,6 @@ class CaptchaService:
         result = {"token": token, "image": image_b64}
 
         if settings.DEBUG:
-            # exposed only in development
             result["debug_answer"] = answer
 
         return result
@@ -66,7 +64,6 @@ class CaptchaService:
 
         stored_answer = cache.get(cache_key)
 
-        # always delete - one-time use regardless of outcome
         cache.delete(cache_key)
 
         if stored_answer is None:

@@ -18,8 +18,8 @@ class User(models.Model):
     )
     email = models.EmailField()
     home_page = models.URLField(blank=True, null=True)
-    ip_address = models.GenericIPAddressField()  # internal ID data
-    user_agent = models.TextField(blank=True, default="")  # internal ID data
+    ip_address = models.GenericIPAddressField()
+    user_agent = models.TextField(blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

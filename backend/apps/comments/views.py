@@ -61,7 +61,7 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
         Accepts multipart/form-data so file + fields arrive together.
         """
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)  # return default HTTP 400
+        serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
         try:
@@ -87,7 +87,6 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
         comment = result["comment"]
         token = result["token"]
 
-        # optional file attachment
         uploaded_file = request.FILES.get("file")
         if uploaded_file:
             try:
@@ -118,12 +117,10 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
         Cache key encodes ordering + page, so each unique combination
         gets its own cache entry.
         """
-        # build cache key from the actual request params
         ordering = request.query_params.get("ordering", "-created_at")
         page = request.query_params.get("page", "1")
         cache_key = make_list_cache_key(ordering=ordering, page=page)
 
-        # try cache first
         cached_response = cache.get(cache_key)
         if cached_response is not None:
             log.debug(f"Cache HIT: list ordering={ordering} page={page}")
@@ -131,20 +128,17 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
 
         log.debug(f"Cache MISS: list ordering={ordering} page={page}")
 
-        # cache miss - build response normally
         queryset = self.filter_queryset(
             self.get_queryset()
-        )  # applies CommentFilter
-        page_obj = self.paginate_queryset(queryset)  # slices the DB query
+        )
+        page_obj = self.paginate_queryset(queryset)
 
-        # for absolute URL generation in AttachmentSerializer
         serializer_context = {"request": request}
 
         if page_obj is not None:
             serializer = CommentListSerializer(
                 page_obj, many=True, context=serializer_context
             )
-            # wrap the data in {count, next, previous, results}
             response_data = self.get_paginated_response(serializer.data).data
         else:
             serializer = CommentListSerializer(
@@ -152,7 +146,6 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
             )
             response_data = serializer.data
 
-        # store in cache
         cache.set(cache_key, response_data, timeout=COMMENT_LIST_TTL)
 
         return Response(response_data)

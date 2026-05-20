@@ -11,10 +11,10 @@ class Comment(models.Model):
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(  # user_id is created for FK
+    user = models.ForeignKey(
         "users.User", on_delete=models.CASCADE, related_name="comments"
     )
-    parent = models.ForeignKey(  # parent_id is created for FK
+    parent = models.ForeignKey(
         "self",
         null=True,
         blank=True,
@@ -33,7 +33,7 @@ class Comment(models.Model):
                 fields=["-created_at"], name="idx_comments_created_desc"
             ),
         ]
-        ordering = ["-created_at"]  # default LIFO
+        ordering = ["-created_at"]
 
     def __str__(self) -> str:
         prefix = "Reply" if self.parent_id else "Comment"

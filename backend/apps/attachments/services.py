@@ -24,19 +24,14 @@ class AttachmentService:
         :raises UnsupportedFileTypeError: Wrong format.
         :raises FileTooLargeError: File too large.
         """
-        # 1. get the right processor (may raise UnsupportedFileTypeError)
         processor = AttachmentStrategy.get_processor(file)
 
-        # 2. validate (may raise UnsupportedFileTypeError, FileTooLargeError)
         processor.validate()
 
-        # 3. process (resize images, passthrough for text)
         processed_file = processor.process()
 
-        # 4. determine type for DB record
         file_type = self._resolve_type(file.content_type)
 
-        # 5. persist
         attachment = Attachment.objects.create(
             comment_id=comment_id,
             file_type=file_type,

@@ -9,7 +9,7 @@ class CommentFilter(django_filters.FilterSet):
     ordering = django_filters.OrderingFilter(
         fields=(
             # (model field, query param name)
-            ("username_lower", "username"),  # use annotation field
+            ("username_lower", "username"),
             ("user__email", "email"),
             ("created_at", "date"),
         ),

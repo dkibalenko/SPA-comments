@@ -56,29 +56,23 @@ class ImageProcessor(AttachmentProcessorInterface):
         original_format = image.format or "PNG"
 
         if image.width <= IMAGE_MAX_WIDTH and image.height <= IMAGE_MAX_HEIGHT:
-            # already within bounds — return as-is
             self.file.seek(0)
             return self.file
 
-        # resize proportionally, never upscale
         image.thumbnail(
             (IMAGE_MAX_WIDTH, IMAGE_MAX_HEIGHT), Image.Resampling.LANCZOS
         )
 
-        # save resized image to in-memory buffer
         output = BytesIO()
         save_format = "PNG" if original_format == "GIF" else original_format
         image.save(output, format=save_format)
-        output.seek(0)  # move pointer to start of buffer
+        output.seek(0)
 
-        # for GIFs, convert to PNG. for others, keep original content type.
         content_type = (
             "image/png" if save_format == "PNG" else self.file.content_type
         )
-        # swap extension if format changed, otherwise keep original name
         new_name = self._swap_extension(save_format)
 
-        # create new InMemoryUploadedFile with resized content
         return InMemoryUploadedFile(
             file=output,
             field_name=self.file.field_name,

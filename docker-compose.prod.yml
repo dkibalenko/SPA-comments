@@ -88,7 +88,7 @@ services:
           cpus: "0.25"
           memory: 256M
 
-  frontend:  # short-lived - a one-shot file transfer, not a running server
+  frontend:
     image: ghcr.io/dkibalenko/spa-frontend:latest
     volumes:
       - frontend_dist:/app/frontend
