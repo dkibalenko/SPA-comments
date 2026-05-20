@@ -1,7 +1,7 @@
 .PHONY: up-dev up-prod down logs shell migrate check test ruff ruff-format mypy frontend-build
 
 up-dev:
-	docker compose up --build
+	docker compose up --build -d
 
 up-prod:
 	docker compose -f docker-compose.prod.yml up -d

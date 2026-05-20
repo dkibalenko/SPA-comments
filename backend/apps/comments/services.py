@@ -104,10 +104,13 @@ class CommentService:
 
         # 7. cache invalidation
         if parent_id:
-            # reply: invalidate the root thread's tree cache
+            # reply: tree cache for this thread+list cache(reply_count changes)
             root_id = self._find_root_id(parent_id)
             invalidate_tree_cache(root_id)
-            log.debug(f"Invalidated tree cache for root {root_id}")
+            invalidate_list_cache()
+            log.debug(
+                f"Invalidated tree cache for root {root_id} and list cache"
+            )
         else:
             # new top-level: invalidate all list pages
             invalidate_list_cache()
@@ -189,7 +192,7 @@ class CommentService:
     def _build_tree(flat_rows: list[dict]) -> list[dict]:
         """Convert flat CTE result into nested dict structure.
 
-        O(n) — single pass. Every node is indexed by id first,
+        O(n) - single pass. Every node is indexed by id first,
         then each node is attached to its parent's replies list.
 
         :param `flat_rows`: Ordered flat list from `get_tree()` CTE.
