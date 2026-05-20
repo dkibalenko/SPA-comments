@@ -128,9 +128,7 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
 
         log.debug(f"Cache MISS: list ordering={ordering} page={page}")
 
-        queryset = self.filter_queryset(
-            self.get_queryset()
-        )
+        queryset = self.filter_queryset(self.get_queryset())
         page_obj = self.paginate_queryset(queryset)
 
         serializer_context = {"request": request}

@@ -110,7 +110,5 @@ class CommentRepository:
         """
         with connection.cursor() as cursor:
             cursor.execute(sql, params=[str(root_id)])
-            columns = [
-                col[0] for col in cursor.description
-            ]
+            columns = [col[0] for col in cursor.description]
             return [dict(zip(columns, row)) for row in cursor.fetchall()]
