@@ -4,7 +4,7 @@ up-dev:
 	docker compose up --build -d
 
 up-prod:
-	docker compose -f docker-compose.prod.yml up -d
+	docker compose -f docker-compose.prod.yml up --build -d
 
 frontend-build:
 	docker compose -f docker-compose.prod.yml build frontend && \

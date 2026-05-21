@@ -68,6 +68,7 @@ View (CommentViewSet.create)
 ### Design decisions
 
 - **`transaction.on_commit`** fires the signal only after the DB transaction commits — prevents WebSocket clients from receiving an event for a row that was subsequently rolled back
+- **Observer pattern** — `CommentService` is the Subject; Django signal handlers are the Observers. The service fires `comment_created` and knows nothing about who reacts; adding a new side effect requires only a new handler
 - **Recursive CTE** replaces the ORM for tree fetches — one query at any depth instead of N+1 per level
 - **Three separate Redis logical DBs** (1 = cache, 2 = channels, 3 = Celery) — isolated so a Celery queue flush never evicts comment cache entries
 - **Repository layer** keeps raw SQL contained; the service layer never touches `connection.cursor()` directly
@@ -146,23 +147,29 @@ spa/
 
 ---
 
-## 🚀 Quick Start (Docker)
+## 🚀 Quick Start
 
 ```bash
 # 1. Clone and enter the project
-git clone <repo-url> && cd spa
+git clone <repo-url> && cd SPA-comments
 
-# 2. Copy environment files
+# 2. Copy the environment file
 cp .env.example .env
-cp .env.example .env.prod
 
-# 3. Start the full production stack
-make up-prod
+# 3. Start the backend stack (PostgreSQL, Redis, Django, Celery, nginx)
+make up-dev
+
+# 4. Start the frontend (separate terminal)
+cd frontend
+npm install
+npm run dev
 ```
 
-Open **http://localhost:8080** — the Vue app loads, API and WebSocket are live.
+Open **http://localhost:5173** — the Vue app loads, API and WebSocket are live.
 
-> To stop: `docker compose -f docker-compose.prod.yml down`
+> To stop the backend stack: `make down`
+
+> **Production deployment** uses `docker-compose.prod.yml` and requires a VPS with the `meizuno` external Docker network in place. See the [CD section](#-cd--continuous-deployment) for details.
 
 ---
 
@@ -172,7 +179,8 @@ Run backend and frontend separately without Docker for a faster feedback loop.
 
 ### Prerequisites
 
-- Python 3.12, [Poetry](https://python-poetry.org/) 2.x
+- Python 3.12
+- [Poetry](https://python-poetry.org/docs/#installation) 2.x — install globally via `pip install poetry` or the official installer
 - Node.js 20+
 - PostgreSQL 16 and Redis 7 running locally (or via `docker compose up db redis`)
 
@@ -181,18 +189,24 @@ Run backend and frontend separately without Docker for a faster feedback loop.
 ```bash
 cd backend
 
-# Install dependencies
+# Point Poetry to Python 3.12 (skip if python3.12 is already your system default)
+# poetry init is NOT needed — pyproject.toml and poetry.lock are already in the repo
+poetry env use python3.12
+
+# Install dependencies into the virtualenv
 poetry install
 
+# Activate the virtualenv — Poetry 2.x prints the activate command to copy-paste
+poetry env activate
+
 # Apply migrations
-poetry run python manage.py migrate
+python manage.py migrate
 
-# Start ASGI server
-DJANGO_SETTINGS_MODULE=config.settings.development \
-  poetry run daphne -b 0.0.0.0 -p 8000 config.asgi:application
+# Start the development server (Daphne is auto-selected as the ASGI server)
+python manage.py runserver
 
-# Start Celery worker (separate terminal)
-poetry run celery -A config.celery_app worker --loglevel=info
+# Start Celery worker (separate terminal, same poetry shell)
+celery -A config.celery_app worker --loglevel=info
 ```
 
 ### Frontend
@@ -451,11 +465,11 @@ The ORM cannot express recursive queries without either N+1 per level or unbound
 **Repository → Service → View layering**
 Views handle only HTTP concerns (request parsing, status codes). Services own business logic and orchestration. Repositories own all database access. This makes the service layer testable with mocked repositories and keeps raw SQL in one place (`CommentRepository.get_tree`).
 
-**`transaction.on_commit` for signal dispatch**
-The `comment_created` signal fires the WebSocket broadcast and queues the Celery email task. Wrapping this in `on_commit` means neither side effect runs if the surrounding transaction rolls back — for example, after an attachment upload failure that triggers `comment.delete()`.
+**`@transaction.atomic` + `transaction.on_commit` for safe signal dispatch**
+`CommentViewSet.create` is wrapped in `@transaction.atomic`, which groups the comment INSERT and the attachment upload into a single DB transaction. `transaction.on_commit` defers the `comment_created` signal to the outermost transaction commit — so the WebSocket broadcast and the Celery email task fire only after the attachment row is persisted. Without the outer `atomic` block, Django's autocommit mode would commit the comment INSERT immediately and fire `on_commit` before `handle_upload` ran, causing connected clients to cache a tree that lacked the attachment. If the attachment upload fails, `transaction.set_rollback(True)` marks the block for rollback on exit, so no orphan comment row is left in the database.
 
-**Three isolated Redis logical databases**
-Cache (DB 1), Channels (DB 2), and Celery (DB 3) are on separate logical databases. A `FLUSHDB` during debugging or a Celery `purge` cannot accidentally evict comment cache entries or drop pending channel messages.
+**Observer pattern for post-write side effects**
+`CommentService` is the Subject: after a comment is saved it fires the `comment_created` Django signal via `transaction.on_commit`. The signal handlers are the Observers: one sends the WebSocket broadcast, another queues the Celery email task. The service has no import of or reference to either handler — adding a new side effect (e.g. push notification) requires only a new connected handler, with zero changes to the service. The pattern continues a level deeper: the WebSocket handler calls `channel_layer.group_send()`, which publishes to a Redis pub/sub channel. Every `CommentConsumer` instance subscribed to that group receives the message independently — Redis pub/sub decouples the handler from individual connections just as Django signals decouple the service from its handlers.
 
 **Strategy pattern for file processing**
 `AttachmentService` selects an `ImageProcessor` or `TextProcessor` at runtime based on MIME type. Adding a new file type requires only a new processor class — the service and upload view are untouched.
