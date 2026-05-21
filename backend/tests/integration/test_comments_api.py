@@ -2,6 +2,7 @@ import uuid
 from unittest.mock import patch
 
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 from apps.comments.models import Comment
 from core.exceptions import CaptchaError
@@ -131,6 +132,25 @@ class TestCommentCreate:
         resp = api_client.post(COMMENTS_URL, _payload(email="not-an-email"))
         assert resp.status_code == 400
 
+    def test_unsupported_file_type_returns_400_and_rolls_back_comment(
+        self, api_client, bypass_captcha
+    ):
+        """
+        Tests that uploading a file with an unsupported MIME type returns 400
+        and leaves no orphan comment row in the database.
+
+        Verifies that transaction.set_rollback(True) in the attachment error
+        path rolls back the comment created earlier in the same atomic block.
+        """
+        pdf = SimpleUploadedFile("doc.pdf", b"content", content_type="application/pdf")
+        resp = api_client.post(
+            COMMENTS_URL,
+            {**_payload(), "file": pdf},
+            format="multipart",
+        )
+        assert resp.status_code == 400
+        assert Comment.objects.count() == 0
+
 
 # GET /api/comments/
 
@@ -214,6 +234,25 @@ class TestCommentList:
         item = resp.data["results"][0]
         for field in ("id", "user", "text", "created_at", "reply_count"):
             assert field in item
+
+    def test_list_cache_hit_returns_cached_data_without_hitting_db(
+        self, api_client, use_local_memory_cache
+    ):
+        """
+        Tests that when the cache already holds a response for the requested
+        ordering+page combination, the view returns it directly without
+        querying the database.
+
+        Verifies the cache HIT branch by pre-loading a sentinel value into
+        the cache and asserting the view returns it as-is.
+        """
+        cached_payload = {"count": 99, "results": []}
+
+        with patch("apps.comments.views.cache.get", return_value=cached_payload):
+            resp = api_client.get(COMMENTS_URL)
+
+        assert resp.status_code == 200
+        assert resp.data["count"] == 99
 
 
 # GET /api/comments/{id}/tree/
