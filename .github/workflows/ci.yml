@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: test_db
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test_user -d test_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      SECRET_KEY: ci-secret-key-not-for-production
+      DEBUG: "True"
+      POSTGRES_DB: test_db
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_HOST: localhost
+      REDIS_CACHE_URL: redis://localhost:6379/1
+      REDIS_CHANNELS_URL: redis://localhost:6379/2
+      REDIS_CELERY_URL: redis://localhost:6379/3
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: "2.1.2"
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Cache virtualenv
+        uses: actions/cache@v4
+        with:
+          path: backend/.venv
+          key: venv-${{ runner.os }}-${{ hashFiles('backend/poetry.lock') }}
+
+      - name: Install dependencies
+        run: poetry install --no-interaction
+
+      - name: Ruff lint
+        run: poetry run ruff check .
+
+      - name: Ruff format check
+        run: poetry run ruff format --check .
+
+      - name: MyPy
+        run: poetry run mypy .
+
+      - name: Pytest
+        run: poetry run pytest --cov --cov-report=xml -q

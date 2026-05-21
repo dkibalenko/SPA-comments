@@ -10,15 +10,15 @@ https://docs.djangoproject.com/en/6.0/howto/deployment/asgi/
 import os
 
 from django.core.asgi import get_asgi_application
-from channels.routing import ProtocolTypeRouter, URLRouter
-from channels.auth import AuthMiddlewareStack
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.development")
 
 # Initialize Django BEFORE importing anything that touches models
 django_asgi_app = get_asgi_application()
 
-from websocket.routing import websocket_urlpatterns  # noqa: E402 — must be after setup
+from channels.routing import ProtocolTypeRouter, URLRouter  # noqa: E402
+from channels.auth import AuthMiddlewareStack               # noqa: E402
+from websocket.routing import websocket_urlpatterns         # noqa: E402 — must be after setup
 
 application = ProtocolTypeRouter({
     # Standard HTTP requests go through Django as normal

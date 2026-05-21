@@ -28,6 +28,7 @@ THIRD_PARTY_APPS = [
     "django_filters",
     "channels",
     "debug_toolbar",
+    "django_extensions",
 ]
 
 LOCAL_APPS = [
@@ -89,7 +90,7 @@ DATABASES = {
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": config("REDIS_URL", default="redis://localhost:6379/1"),
+        "LOCATION": config("REDIS_CACHE_URL", default="redis://localhost:6379/1"),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
@@ -101,32 +102,32 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [config("REDIS_URL", default="redis://localhost:6379/0")],
+            "hosts": [config("REDIS_CHANNELS_URL", default="redis://localhost:6379/2")],
         },
     },
 }
 
 # ── Celery ────────────────────────────────────────────────
-CELERY_BROKER_URL = config("REDIS_URL", default="redis://localhost:6379/2")
-CELERY_RESULT_BACKEND = config("REDIS_URL", default="redis://localhost:6379/2")
+CELERY_BROKER_URL = config("REDIS_CELERY_URL", default="redis://localhost:6379/3")
+CELERY_RESULT_BACKEND = config("REDIS_CELERY_URL", default="redis://localhost:6379/3")
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 
 # ── DRF ──────────────────────────────────────────────────
-# REST_FRAMEWORK = {
-#     "DEFAULT_AUTHENTICATION_CLASSES": [
-#         "rest_framework_simplejwt.authentication.JWTAuthentication",
-#     ],
-#     "DEFAULT_PERMISSION_CLASSES": [
-#         "rest_framework.permissions.AllowAny",  # comments are public
-#     ],
-#     "DEFAULT_PAGINATION_CLASS": "core.pagination.CommentPagination",
-#     "PAGE_SIZE": 25,
-#     "DEFAULT_FILTER_BACKENDS": [
-#         "django_filters.rest_framework.DjangoFilterBackend",
-#         "rest_framework.filters.OrderingFilter",
-#     ],
-# }
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.AllowAny",  # comments are public
+    ],
+    "DEFAULT_PAGINATION_CLASS": "core.pagination.CommentPagination",
+    "PAGE_SIZE": 25,
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",  # backend 1 - responsible for the sorting
+        # "rest_framework.filters.OrderingFilter",  # backend 2
+    ],
+}
 
 # ── Static & Media ────────────────────────────────────────
 STATIC_URL = "/static/"
@@ -139,3 +140,68 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 INTERNAL_IPS = [
     "127.0.0.1",
 ]
+
+DEFAULT_FROM_EMAIL = "noreply@spa-comments.local"
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": "WARNING",      # Django's own logs at INFO
+            "propagate": False,
+        },
+        "daphne": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False
+        },
+        "celery": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False
+        },
+        "celery.app.trace": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False
+        },
+        "PIL": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False
+        },
+        "apps": {
+            "handlers": ["console"],
+            "level": "DEBUG",     # app code at DEBUG
+            "propagate": False,
+        },
+        "core": {
+            "handlers": ["console"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
+        "websocket": {
+            "handlers": ["console"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
+    },
+}
