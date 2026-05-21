@@ -1,6 +1,7 @@
 import logging
 
 from django.core.cache import cache
+from django.db import transaction
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.mixins import CreateModelMixin, ListModelMixin
@@ -55,10 +56,17 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
             return CommentCreateSerializer
         return CommentListSerializer
 
+    @transaction.atomic
     def create(self, request: Request, *args, **kwargs) -> Response:
         """Create a new comment or reply with optional file attachment.
 
         Accepts multipart/form-data so file + fields arrive together.
+
+        Wrapped in `@transaction.atomic` so that `on_commit` (which fires the
+        WebSocket broadcast) defers until AFTER `handle_upload` saves the
+        attachment. Without this, the WebSocket fires before the attachment
+        row exists, causing clients to re-fetch and cache a tree that lacks
+        `attachment_path` for the new comment.
         """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -95,8 +103,7 @@ class CommentViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
                     file=uploaded_file,
                 )
             except (UnsupportedFileTypeError, FileTooLargeError) as exc:
-                # rollback to keep atomicity
-                comment.delete()  # type: ignore
+                transaction.set_rollback(True)
                 return Response(
                     {"detail": str(exc)},
                     status=status.HTTP_400_BAD_REQUEST,
