@@ -149,15 +149,20 @@ spa/
 
 ## 🚀 Quick Start
 
+**Prerequisites:** [Docker](https://docs.docker.com/get-docker/) · [Node.js **≥ 20.19.0**](https://nodejs.org/) (Vite 6 requires it — Node 14/16/18 will fail)
+
 ```bash
 # 1. Clone and enter the project
-git clone <repo-url> && cd SPA-comments
+git clone https://github.com/dkibalenko/SPA-comments.git && cd SPA-comments   # HTTPS
+git clone git@github.com:dkibalenko/SPA-comments.git && cd SPA-comments       # SSH
 
 # 2. Copy the environment file
-cp .env.example .env
+cp .env.example .env          # Linux / macOS
+copy .env.example .env        # Windows PowerShell
 
 # 3. Start the backend stack (PostgreSQL, Redis, Django, Celery, nginx)
-make up-dev
+make up-dev                              # Linux / macOS
+docker compose up --build -d             # Windows PowerShell (no make)
 
 # 4. Start the frontend (separate terminal)
 cd frontend
@@ -167,7 +172,9 @@ npm run dev
 
 Open **http://localhost:5173** — the Vue app loads, API and WebSocket are live.
 
-> To stop the backend stack: `make down`
+> **Windows users:** `make` is a Unix tool and is not available in PowerShell by default. Use the raw `docker compose` commands shown above, or install Make via [Chocolatey](https://chocolatey.org/): `choco install make`.
+
+> To stop the backend stack: `make down` / `docker compose down`
 
 > **Production deployment** uses `docker-compose.prod.yml` and requires a VPS with the `meizuno` external Docker network in place. See the [CD section](#-cd--continuous-deployment) for details.
 
